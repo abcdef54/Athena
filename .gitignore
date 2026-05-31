@@ -1,0 +1,126 @@
+# ==========================================
+# LocalMind .gitignore configuration
+# ==========================================
+
+migrations/
+
+# --- Virtual Environments ---
+.venv/
+venv/
+ENV/
+env/
+venv.bak/
+.venv.bak/
+
+# --- Environment Configurations & Secrets ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+.env*.local
+
+# --- Python Bytecode & Build Caches ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.htmlcov/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- PEP 582 (Python Packages) ---
+__pypackages__/
+
+# --- Local Databases & SQLite Temp Files ---
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+.test_temp_db.sqlite
+.test_temp_db.sqlite-journal
+
+# --- Project Runtime Uploads & Vector Stores ---
+uploads/
+src/uploads/
+chroma/
+chromadb/
+**/chroma_db/
+**/chroma/
+**/uploads/
+
+# --- Celery ---
+celerybeat-schedule
+celerybeat.pid
+
+# --- Node / Frontend (Future-proofing) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.yarn/
+.next/
+.nuxt/
+out/
+.docusaurus/
+
+# --- IDE / Editor Configurations ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.project
+.settings/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- OS-generated Files ---
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100
+.Trashes
+
+# --- Log Files ---
+*.log

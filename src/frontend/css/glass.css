@@ -1,0 +1,98 @@
+/* Design Tokens & Glass Utilities */
+:root {
+    /* Colors */
+    --bg-dark: #0f0f11;
+    --glass-bg: rgba(30, 30, 34, 0.65);
+    --glass-bg-hover: rgba(45, 45, 50, 0.7);
+    --glass-bg-active: rgba(60, 60, 65, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-highlight: rgba(255, 255, 255, 0.15);
+    
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-tertiary: rgba(255, 255, 255, 0.4);
+    
+    --accent-blue: #2970ff;
+    --accent-blue-hover: #1e5de6;
+    --accent-cyan: #00d2ff;
+    
+    /* Effects */
+    --blur-amount: 24px;
+    --shadow-soft: 0 4px 24px -4px rgba(0, 0, 0, 0.3);
+    --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    
+    /* Layout */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --sidebar-width: 280px;
+}
+
+/* Base Glass Effect */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-amount)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-soft);
+}
+
+/* Glass Button */
+.glass-button {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.glass-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--glass-border-highlight);
+    transform: translateY(-1px);
+}
+
+.glass-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.glass-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Glass Icon Button */
+.glass-button-icon {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.glass-button-icon:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.glass-button-icon:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}

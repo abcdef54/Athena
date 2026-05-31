@@ -1,0 +1,10 @@
+from src.backend.routes.chat import router as chat_router
+from src.backend.routes.conversations import router as conversation_router
+from src.backend.routes.uploads import router as uploads_router
+
+
+__all__ = [
+    'chat_router',
+    'conversation_router',
+    'uploads_router'
+]
