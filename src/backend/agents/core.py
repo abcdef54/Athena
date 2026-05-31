@@ -14,14 +14,27 @@ os.environ['LANGCHAIN_ENDPOINT'] = os.getenv('LANGCHAIN_ENDPOINT')
 os.environ['LANGCHAIN_API_KEY'] = os.getenv('LANGCHAIN_API_KEY')
 
 
-def get_athena_system_instruction() -> str:
+def get_athena_system_instruction(personality: str = 'general') -> str:
     """
-    Dynamically generates Athena's system instruction, injecting the 
-    exact real-time date and tool execution contracts.
+    Dynamically generates Athena's system instruction by reading from localized 
+    personality text files and injecting real-time context.
     """
-    # Capture the exact current date dynamically at runtime
     current_date_str = datetime.datetime.now().strftime("%A, %B %d, %Y")
-    
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_dir, "agent_personality", f"{personality}.txt")
+
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                raw_instruction = f.read()
+            
+            return raw_instruction.format(current_date_str=current_date_str)
+        except Exception as e:
+            print(f"[ERROR] Failed to read personality file at {file_path}: {str(e)}")
+    else:
+        print(f"[WARNING] Personality file not found: {file_path}. Falling back to default baseline.")
+
     return f"""You are Athena, an elite conversational intelligence and research assistant. Your primary goal is to provide clear, accurate, and deeply thoughtful interactions while maintaining total contextual awareness. Ground your responses in real-world facts using your available tool suite.
 
 === 1. SYSTEM CONTEXT & TEMPORAL BOUNDS ===
@@ -60,12 +73,10 @@ Use your tools proactively to retrieve facts, read documents, search the web, or
 
 
 
-ATHENA_SYSTEM_INSTRUCTION = get_athena_system_instruction()
 
-
-def make_agent():
+def make_agent(personality: str):
     """Compiles and yields a modern functional LangChain Agent."""
-    system_prompt = ATHENA_SYSTEM_INSTRUCTION
+    system_prompt = get_athena_system_instruction(personality)
 
     if not system_prompt:
         raise RuntimeError("ATHENA_SYSTEM_INSTRUCTION is not set in environment")

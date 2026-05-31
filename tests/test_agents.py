@@ -85,3 +85,35 @@ async def test_tool_read_emails():
         assert "FROM: sender@test.com" in emails_summary
         assert "SUBJECT: Test Subject" in emails_summary
         assert "SUMMARY: mock email body" in emails_summary
+
+
+async def test_get_athena_system_instruction_personalities():
+    from src.backend.agents.core import get_athena_system_instruction
+    
+    # 1. Test General baseline / custom file
+    general_prompt = get_athena_system_instruction("general")
+    assert "You are Athena" in general_prompt
+
+    # 2. Test Coder personality
+    coder_prompt = get_athena_system_instruction("coder")
+    assert "Athena Code Architect" in coder_prompt
+
+    # 3. Test Gen-Z personality
+    genz_prompt = get_athena_system_instruction("genz")
+    assert "Athena Gen-Z" in genz_prompt
+
+    # 4. Test Researcher personality
+    researcher_prompt = get_athena_system_instruction("researcher")
+    assert "Athena Research Analyst" in researcher_prompt
+
+    # 5. Test Unhinged personality
+    unhinged_prompt = get_athena_system_instruction("unhinged")
+    assert "Athena Unbound" in unhinged_prompt
+
+    # 6. Test Assistant personality
+    assistant_prompt = get_athena_system_instruction("assistant")
+    assert "Athena Executive Assistant" in assistant_prompt
+
+    # 7. Test Fallback
+    fallback_prompt = get_athena_system_instruction("invalid-personality-name")
+    assert "You are Athena" in fallback_prompt

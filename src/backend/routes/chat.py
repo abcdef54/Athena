@@ -3,7 +3,6 @@ import dotenv
 
 from fastapi import Depends, HTTPException, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
-from langchain.messages import HumanMessage, AIMessage, SystemMessage
 
 from src.backend.auth import current_active_user
 from src.backend.agents import make_agent
@@ -17,7 +16,14 @@ dotenv.load_dotenv()
 
 router = APIRouter(prefix='/chat', tags=['chat'])
 
-agent = make_agent()
+AGENTS = {
+    'general': make_agent('general'),
+    'researcher': make_agent('researcher'),
+    'coder': make_agent('coder'),
+    'genz': make_agent('genz'),
+    'unhinged': make_agent('unhinged'),
+    'assistant': make_agent('assistant')
+}
 
 @router.post("")
 async def chat(
@@ -46,6 +52,7 @@ async def chat(
             content=request.content,
             conversation_id=request.conversation_id,
             role="user",
+            personality=None,
             session=session
         )  
         print(f"[DEBUG /chat] User message created successfully with ID: {message.id}")
@@ -68,7 +75,7 @@ async def chat(
         }
 
         print("[DEBUG /chat] Invoking LangChain agent...")
-        agent_response = await agent.ainvoke({
+        agent_response = await AGENTS.get(request.personality, AGENTS["general"]).ainvoke({
             'messages': full_chat,
             }, 
             config=config
@@ -120,7 +127,8 @@ async def chat(
             conversation_id=request.conversation_id,
             role="assistant",
             session=session,
-            citations=citations
+            citations=citations,
+            personality=request.personality
         )
         print(f"[DEBUG /chat] Assistant message saved successfully with ID: {assistant_message.id}")
 
@@ -129,6 +137,7 @@ async def chat(
             conversation_id=assistant_message.conversation_id,
             content=assistant_message.content,
             role=assistant_message.role,
+            personality=assistant_message.personality,
             created_at=assistant_message.created_at
         )
 
@@ -169,6 +178,7 @@ async def update_message(
             conversation_id=new_message.conversation_id,
             content=new_message.content,
             role=new_message.role,
+            personality=new_message.personality,
             created_at=new_message.created_at
         )
     except HTTPException:

@@ -52,6 +52,7 @@ async def create_message(
     conversation_id: UUID,
     role: str,
     session: AsyncSession,
+    personality: Optional[str] = None,
     citations: Optional[List[Attachment]] = None
 ) -> Message:
     conversation_id = coerce_uuid(conversation_id)
@@ -63,6 +64,7 @@ async def create_message(
         conversation_id=conversation_id,
         content=content,
         role=role,
+        personality=personality,
         citations=citations or []
     )
     try:

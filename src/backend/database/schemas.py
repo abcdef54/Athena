@@ -7,9 +7,12 @@ from fastapi_users import schemas
 from pydantic import ConfigDict
 
 
+from typing import Optional
+
 class ChatRequest(BaseModel):
     conversation_id: UUID
     content: str
+    personality: str = "general"
     deep_think: bool
 
 
@@ -18,9 +21,11 @@ class ChatResponse(BaseModel):
     conversation_id: UUID
     content: str
     role: str
+    personality: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
 
 
 
