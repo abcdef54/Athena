@@ -48,7 +48,7 @@ async def test_conversation_crud_operations(db_session: AsyncSession, test_user:
          patch("src.backend.database.crud.remove_attachment", AsyncMock(return_value={})):
         
         deleted_conv = await crud.delete_conversation(conv.id, test_user, db_session)
-        assert deleted_conv.id == conv.id
+        assert deleted_conv["id"] == conv.id
 
     # Check if deleted
     with pytest.raises(ConversationNotFound):
@@ -202,3 +202,38 @@ async def test_attachment_google_drive(db_session: AsyncSession, test_user: User
             session=db_session
         )
         assert deleted_data["id"] == attachment.id
+
+
+async def test_soft_delete_conversation(db_session: AsyncSession, test_user: User):
+    # 1. Create a conversation and add a message
+    conv = await crud.create_conversation("Soft Delete Conv", test_user, db_session)
+    msg = await crud.create_message("Hello Athena Soft Delete", conv.id, "user", db_session, user=test_user)
+
+    # 2. Call delete_conversation to trigger soft delete
+    with patch("src.backend.database.crud.ingest_docs", AsyncMock()), \
+         patch("src.backend.database.crud.remove_attachment", AsyncMock(return_value={})):
+        
+        deleted_data = await crud.delete_conversation(conv.id, test_user, db_session)
+        assert deleted_data["id"] == conv.id
+        assert deleted_data["title"] == "Soft Delete Conv"
+
+    # 3. Check that the conversation is no longer returned by get_conversations
+    active_conversations = await crud.get_conversations(test_user, db_session)
+    assert not any(c.id == conv.id for c in active_conversations)
+
+    # 4. Check that get_conversation raises ConversationNotFound
+    with pytest.raises(ConversationNotFound):
+        await crud.get_conversation(conv.id, test_user, db_session)
+
+    # 5. Verify the columns directly in the database using a raw SQLAlchemy select (bypassing crud soft-delete filters)
+    stmt_conv = select(Conversation).where(Conversation.id == conv.id)
+    res_conv = await db_session.execute(stmt_conv)
+    db_conv = res_conv.scalar_one_or_none()
+    assert db_conv is not None
+    assert db_conv.deleted_at is not None  # It exists but deleted_at is populated!
+
+    stmt_msg = select(Message).where(Message.id == msg.id)
+    res_msg = await db_session.execute(stmt_msg)
+    db_msg = res_msg.scalar_one_or_none()
+    assert db_msg is not None
+    assert db_msg.deleted_at is not None  # Cascaded message deleted_at is populated!

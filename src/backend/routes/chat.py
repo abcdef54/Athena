@@ -52,6 +52,7 @@ async def chat(
             content=request.content,
             conversation_id=request.conversation_id,
             role="user",
+            user=user,
             personality=None,
             session=session
         )  
@@ -126,6 +127,7 @@ async def chat(
             content = response_content,
             conversation_id=request.conversation_id,
             role="assistant",
+            user=user,
             session=session,
             citations=citations,
             personality=request.personality

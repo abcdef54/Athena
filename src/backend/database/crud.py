@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import shutil
 import uuid
@@ -7,7 +8,7 @@ import tempfile
 from typing import Optional, List, Dict
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from uuid import UUID
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -52,13 +53,33 @@ async def create_message(
     conversation_id: UUID,
     role: str,
     session: AsyncSession,
+    user: Optional[User] = None,
     personality: Optional[str] = None,
     citations: Optional[List[Attachment]] = None
 ) -> Message:
     conversation_id = coerce_uuid(conversation_id)
-    conversation = await session.get(Conversation, conversation_id)
-    if not conversation:
-        raise ConversationNotFound(f"Conversation {conversation_id} not found")
+    if user is not None:
+        conversation = await session.execute(
+            select(Conversation).where(
+                Conversation.id == conversation_id,
+                Conversation.deleted_at == None
+            )
+        )
+        conversation = conversation.scalar_one_or_none()
+        if not conversation:
+            raise ConversationNotFound(f"Conversation {conversation_id} not found")
+        if conversation.user_id != user.id:
+            raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}")
+    else:
+        conversation = await session.execute(
+            select(Conversation).where(
+                Conversation.id == conversation_id,
+                Conversation.deleted_at == None
+            )
+        )
+        conversation = conversation.scalar_one_or_none()
+        if not conversation:
+            raise ConversationNotFound(f"Conversation {conversation_id} not found")
 
     new_message = Message(
         conversation_id=conversation_id,
@@ -88,14 +109,27 @@ async def update_message(
 ) -> Message:
     message_id = coerce_uuid(message_id)
     conversation_id = coerce_uuid(conversation_id)
-    conversation = await session.get(Conversation, conversation_id)
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.deleted_at == None
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
-        raise ConversationNotFound(f"Converastion {conversation_id} not found.")
+        raise ConversationNotFound(f"Conversation {conversation_id} not found.")
 
-    if user.id != conversation.user_id:
+    if conversation.user_id != user.id:
         raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
 
-    message = await session.get(Message, message_id)
+    message = await session.execute(
+        select(Message).where(
+            Message.id == message_id,
+            Message.conversation_id == conversation_id,
+            Message.deleted_at == None
+        )
+    )
+    message = message.scalar_one_or_none()
     if not message:
         raise MessageNotFound(f"Message {message_id} not found.")
 
@@ -117,7 +151,8 @@ async def get_conversations(
     session: AsyncSession
 ) -> list[Conversation]:
     stmt = select(Conversation).where(
-        Conversation.user_id == user.id
+        Conversation.user_id == user.id,
+        Conversation.deleted_at == None
     ).order_by(
         Conversation.created_at.desc()
     )
@@ -131,7 +166,13 @@ async def get_conversation(
     session: AsyncSession
 ) -> Conversation:
     id = coerce_uuid(id)
-    conversation = await session.get(Conversation, id)
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == id,
+            Conversation.deleted_at == None 
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
         raise ConversationNotFound(f"Conversation {id} not found.")
     if user.id != conversation.user_id:
@@ -145,7 +186,11 @@ async def get_conversation_messages(
     session: AsyncSession
 ) -> list[Message]:
     conversation_id = coerce_uuid(conversation_id)
-    conversation = await session.get(Conversation, conversation_id)
+    conversation = await session.execute(select(Conversation).where(
+        Conversation.id == conversation_id,
+        Conversation.deleted_at == None
+    ))
+    conversation = conversation.scalar_one_or_none()
     
     if conversation is None:
         raise ConversationNotFound(f"Conversation {conversation_id} not found")
@@ -153,7 +198,12 @@ async def get_conversation_messages(
     if user.id != conversation.user_id:
         raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}")
     
-    results = await session.scalars(select(Message).where(Message.conversation_id == conversation_id))
+    results = await session.scalars(
+        select(Message).where(
+            Message.conversation_id == conversation_id,
+            Message.deleted_at == None
+        )
+    )
     return results.all()
 
 
@@ -163,14 +213,23 @@ async def delete_conversation(
     session: AsyncSession
 ) -> dict:
     conversation_id = coerce_uuid(conversation_id)
-    existing_conversation = await session.get(Conversation, conversation_id)
+    existing_conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.deleted_at == None
+        )
+    )
+    existing_conversation = existing_conversation.scalar_one_or_none()
     if not existing_conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
     
     if user.id != existing_conversation.user_id:
         raise PermissionError(f'User {user.id} is not the owner of conversation {conversation_id}.')
     
-    stmt = select(Attachment).where(Attachment.conversation_id == conversation_id)
+    stmt = select(Attachment).where(
+        Attachment.conversation_id == conversation_id,
+        Attachment.deleted_at == None
+    )
     result = await session.execute(stmt)
     attachments_to_wipe = result.scalars().all()
 
@@ -187,11 +246,25 @@ async def delete_conversation(
         ]
         await asyncio.gather(*cleanup_tasks)
 
-    copy = existing_conversation
+    conversation_data_copy = {
+        "id": existing_conversation.id,
+        "title": existing_conversation.title,
+        "created_at": existing_conversation.created_at
+    }
     try:
-        await session.delete(existing_conversation)
+        current_time = datetime.utcnow()
+        stmt = update(Message).where(
+            Message.conversation_id == conversation_id
+        ).values(
+            deleted_at = current_time
+        )
+        await session.execute(stmt)
+
+        existing_conversation.deleted_at = current_time
         await session.commit()
-        return copy
+        await session.refresh(existing_conversation)
+
+        return conversation_data_copy
     except Exception:
         await session.rollback()
         raise
@@ -202,7 +275,13 @@ async def conversation_exist(
         session: AsyncSession
 ) -> Conversation | None:
     conversation_id = coerce_uuid(conversation_id)
-    conversation = await session.get(Conversation, conversation_id)
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.deleted_at == None
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     return conversation
 
 
@@ -213,7 +292,13 @@ async def rename_conversation(
     session: AsyncSession
 ) -> Conversation:
     conversation_id = coerce_uuid(conversation_id)
-    conversation = await session.get(Conversation, conversation_id)
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.deleted_at == None
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
 
@@ -245,7 +330,13 @@ async def create_attachment(
     print(f"  - filename: {file.filename}")
     print(f"  - storage_provider: {storage_provider}")
 
-    conversation = await session.get(Conversation, conversation_id)
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.deleted_at == None
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
         print(f"[DEBUG create_attachment] ERROR: Conversation {conversation_id} not found.")
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
@@ -363,14 +454,27 @@ async def remove_attachment(
 ) -> dict:
     conversation_id = coerce_uuid(conversation_id)
     file_id = coerce_uuid(file_id)
-    conversation = await session.get(Conversation, conversation_id)
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.deleted_at == None
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
 
     if conversation.user_id != user.id:
         raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
-    
-    attachment = await session.get(Attachment, file_id)
+
+    attachment = await session.execute(
+        select(Attachment).where(
+            Attachment.id == file_id,
+            Attachment.conversation_id == conversation_id,
+            Attachment.deleted_at == None
+        )
+    )
+    attachment = attachment.scalar_one_or_none()
     if not attachment:
         raise FileNotFoundError(f"File {file_id} not found in database.")
 
@@ -425,7 +529,8 @@ async def get_attachments(
     stmt = select(Attachment).join(
         Conversation, Conversation.id == Attachment.conversation_id
     ).where(
-        Conversation.user_id == user.id
+        Conversation.user_id == user.id,
+        Conversation.deleted_at == None
     ).order_by(
         Attachment.created_at.desc()
     )
@@ -439,12 +544,19 @@ async def get_conversation_attachments(
     session: AsyncSession
 ) -> Optional[List[Attachment]]:
     conversation_id = coerce_uuid(conversation_id)
-    conversation = await session.get(Conversation, conversation_id)
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.deleted_at == None
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
     
-    if user.id != conversation.user_id:
+    if conversation.user_id != user.id:
         raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
+    
 
     stmt = select(Attachment).where(
         Attachment.conversation_id == conversation_id
@@ -477,9 +589,12 @@ async def get_citations(
                         source_filename.add(os.path.basename(local_source_path))
     if not source_filename:
         return []
-    stmt = select(Attachment).where(
+    stmt = select(Attachment).join(
+        Conversation, Conversation.id == Attachment.conversation_id
+    ).where(
         Attachment.conversation_id == conversation_id,
-        Attachment.file_name.in_(source_filename)
+        Attachment.file_name.in_(source_filename),
+        Conversation.deleted_at == None  # <-- Guard against archived context indexing
     )
     result = await session.execute(stmt)
     return result.scalars().all()
@@ -497,12 +612,16 @@ async def get_infomation_source(
     """
     message_id = coerce_uuid(message_id)
     conversation_id = coerce_uuid(conversation_id)
-    conversation = await session.get(Conversation, conversation_id)
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.user_id == user.id,
+            Conversation.deleted_at == None
+        )
+    )
+    conversation = conversation.scalar_one_or_none()
     if not conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
-    
-    if user.id != conversation.user_id:
-        raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}")
 
     stmt = select(Message).where(
         Message.id == message_id,
