@@ -96,3 +96,226 @@
     opacity: 0.3;
     cursor: not-allowed;
 }
+
+/* ==========================================
+   Athena 2.0 Personality Selector & Modals
+   ========================================== */
+
+/* Personality Selector */
+.personality-select-container {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.personality-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    max-width: 120px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.personality-select:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--glass-border-highlight);
+}
+
+.personality-select:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 8px rgba(0, 210, 255, 0.2);
+}
+
+.personality-select option {
+    background: #18181b;
+    color: var(--text-primary);
+    padding: 8px;
+}
+
+/* Sidebar Hover Action Group */
+.conversation-item {
+    transition: padding-right 0.2s ease, background 0.2s ease, color 0.2s ease !important;
+}
+
+.conversation-item:hover .conv-title {
+    padding-right: 56px;
+}
+
+.conversation-item .conv-title {
+    transition: padding-right 0.2s ease;
+}
+
+.conversation-item .conv-actions {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    background: rgba(30, 30, 34, 0.9);
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    z-index: 10;
+}
+
+.conversation-item:hover .conv-actions {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    pointer-events: auto;
+}
+
+.conv-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.conv-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.conv-action-btn.delete-btn:hover {
+    color: #ff4a4a;
+    background: rgba(255, 74, 74, 0.15);
+}
+
+/* Custom Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-box {
+    width: 90%;
+    max-width: 440px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid var(--glass-border-highlight);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal-overlay:not(.hidden) .modal-box {
+    transform: translateY(0);
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-header h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 24px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Glass Buttons inside modal */
+.glass-button.secondary {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.glass-button.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.glass-button.danger {
+    background: rgba(255, 74, 74, 0.15);
+    border-color: rgba(255, 74, 74, 0.2);
+    color: #ff9e9e;
+}
+
+.glass-button.danger:hover {
+    background: rgba(255, 74, 74, 0.25);
+    border-color: rgba(255, 74, 74, 0.4);
+    color: #ffb8b8;
+}
+
+/* Inline Rename Input field */
+.conversation-rename-input {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--accent-cyan) !important;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary) !important;
+    font-size: 0.9rem;
+    font-weight: 400;
+    padding: 4px 8px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 0 8px rgba(0, 210, 255, 0.2);
+    font-family: inherit;
+}
+

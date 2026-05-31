@@ -9,6 +9,8 @@ export const chat = {
     messages: [],
     isWaiting: false,
     deepThink: false,
+    personality: 'general',
+    deletingConversationId: null,
 
     // Initialize event handlers and listeners
     init: () => {
@@ -16,8 +18,7 @@ export const chat = {
         const sendBtn = document.getElementById('sendBtn');
         const deepThinkToggle = document.getElementById('deepThinkToggle');
         const newChatBtn = document.getElementById('newChatBtn');
-        const renameBtn = document.getElementById('renameConvBtn');
-        const deleteBtn = document.getElementById('deleteConvBtn');
+        const personalitySelect = document.getElementById('personalitySelect');
 
         // Input text auto-resize
         input.addEventListener('input', () => {
@@ -50,12 +51,39 @@ export const chat = {
             ui.showToast(`Deep Think ${chat.deepThink ? 'Enabled (Neon reasoning mode)' : 'Disabled'}`, 'success');
         });
 
+        // Personality Dropdown trigger
+        if (personalitySelect) {
+            personalitySelect.addEventListener('change', (e) => {
+                chat.personality = e.target.value;
+                ui.showToast(`Active Personality set to: ${chat.personality.toUpperCase()}`, 'success');
+            });
+        }
+
+        // Deletion modal custom event listeners
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const deleteModal = document.getElementById('deleteModal');
+
+        if (modalCloseBtn) {
+            modalCloseBtn.addEventListener('click', () => chat.closeDeleteModal());
+        }
+        if (cancelDeleteBtn) {
+            cancelDeleteBtn.addEventListener('click', () => chat.closeDeleteModal());
+        }
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', () => chat.executeDelete());
+        }
+        if (deleteModal) {
+            deleteModal.addEventListener('click', (e) => {
+                if (e.target === deleteModal) {
+                    chat.closeDeleteModal();
+                }
+            });
+        }
+
         // Sidebar new chat trigger
         newChatBtn.addEventListener('click', () => chat.createNewChat());
-
-        // Header controls (Rename/Delete)
-        renameBtn.addEventListener('click', () => chat.handleRenameActive());
-        deleteBtn.addEventListener('click', () => chat.handleDeleteActive());
         
         // Setup initial disabled inputs representing Welcome state
         input.disabled = false;
@@ -105,9 +133,46 @@ export const chat = {
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
                 <span class="conv-title">${conv.title || 'New Conversation'}</span>
+                <div class="conv-actions">
+                    <button class="conv-action-btn rename-btn" title="Rename Chat">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path>
+                        </svg>
+                    </button>
+                    <button class="conv-action-btn delete-btn" title="Delete Chat">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
             `;
             
-            li.addEventListener('click', () => chat.selectConversation(conv.id));
+            li.addEventListener('click', (e) => {
+                // If clicking active element, do not switch if input is active
+                if (li.querySelector('.conversation-rename-input')) return;
+                chat.selectConversation(conv.id);
+            });
+
+            // Bind inline action triggers
+            const renameBtn = li.querySelector('.rename-btn');
+            const deleteBtn = li.querySelector('.delete-btn');
+
+            if (renameBtn) {
+                renameBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    chat.startInlineRename(conv.id, li);
+                });
+            }
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    chat.openDeleteModal(conv.id);
+                });
+            }
+
             ul.appendChild(li);
         });
     },
@@ -136,15 +201,12 @@ export const chat = {
         chat.renderConversationsList();
         
         const conv = chat.conversations.find(c => c.id === id);
-        const headerActions = document.getElementById('chatHeaderActions');
         const chatTitle = document.getElementById('chatTitle');
 
         if (conv) {
             chatTitle.textContent = conv.title || 'Chat';
-            headerActions.classList.remove('hidden');
         } else {
             chatTitle.textContent = 'Select a conversation';
-            headerActions.classList.add('hidden');
         }
         
         // Hide File Drawer if open
@@ -165,7 +227,6 @@ export const chat = {
         chat.renderConversationsList();
         
         document.getElementById('chatTitle').textContent = 'Select a conversation';
-        document.getElementById('chatHeaderActions').classList.add('hidden');
         
         const container = document.getElementById('messagesContainer');
         const emptyState = document.getElementById('chatEmptyState');
@@ -331,10 +392,14 @@ export const chat = {
             input.disabled = true;
             sendBtn.disabled = true;
             deepThinkToggle.disabled = true;
+            const personalitySelect = document.getElementById('personalitySelect');
+            if (personalitySelect) personalitySelect.disabled = true;
             chat.showTypingIndicator();
         } else {
             input.disabled = false;
             deepThinkToggle.disabled = false;
+            const personalitySelect = document.getElementById('personalitySelect');
+            if (personalitySelect) personalitySelect.disabled = false;
             input.value = '';
             input.style.height = 'auto';
             input.focus();
@@ -372,8 +437,8 @@ export const chat = {
             };
             await chat.appendMessage(userMsg);
 
-            // Fetch AI prompt response
-            const responseMsg = await api.sendChatMessage(activeId, content, chat.deepThink);
+            // Fetch AI prompt response (attaching active personality)
+            const responseMsg = await api.sendChatMessage(activeId, content, chat.deepThink, chat.personality);
             
             chat.setWaitingState(false);
             
@@ -385,47 +450,115 @@ export const chat = {
         }
     },
 
-    // Handles active renaming prompt
-    handleRenameActive: async () => {
-        if (!chat.activeConversationId) return;
-        const conv = chat.conversations.find(c => c.id === chat.activeConversationId);
-        if (!conv) return;
+    // Starts in-line editable content renaming
+    startInlineRename: (id, li) => {
+        const titleSpan = li.querySelector('.conv-title');
+        const currentTitle = titleSpan.textContent;
 
-        const currentName = conv.title || 'New Chat';
-        const newName = prompt('Rename this conversation:', currentName);
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'conversation-rename-input';
+        input.value = currentTitle;
+
+        const convIcon = li.querySelector('.conv-icon');
+        const convActions = li.querySelector('.conv-actions');
         
-        if (newName && newName.trim() && newName.trim() !== currentName) {
-            try {
-                const updated = await api.renameConversation(chat.activeConversationId, newName.trim());
-                conv.title = updated.title;
-                document.getElementById('chatTitle').textContent = updated.title;
-                chat.renderConversationsList();
-                ui.showToast('Conversation renamed successfully', 'success');
-            } catch (error) {
-                ui.showToast('Failed to rename conversation');
+        if (convIcon) convIcon.style.display = 'none';
+        if (convActions) convActions.style.display = 'none';
+        titleSpan.style.display = 'none';
+        
+        li.appendChild(input);
+        input.focus();
+        input.select();
+
+        let finished = false;
+
+        const commitRename = async () => {
+            if (finished) return;
+            finished = true;
+            
+            const newTitle = input.value.trim();
+            if (newTitle && newTitle !== currentTitle) {
+                try {
+                    const updated = await api.renameConversation(id, newTitle);
+                    const conv = chat.conversations.find(c => c.id === id);
+                    if (conv) {
+                        conv.title = updated.title;
+                        if (id === chat.activeConversationId) {
+                            document.getElementById('chatTitle').textContent = updated.title;
+                        }
+                    }
+                    ui.showToast('Conversation renamed successfully', 'success');
+                } catch (error) {
+                    ui.showToast('Failed to rename conversation');
+                }
             }
+            
+            chat.renderConversationsList();
+        };
+
+        const cancelRename = () => {
+            if (finished) return;
+            finished = true;
+            chat.renderConversationsList();
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                commitRename();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelRename();
+            }
+        });
+
+        input.addEventListener('blur', () => {
+            commitRename();
+        });
+    },
+
+    // Handles active deletion modal trigger
+    openDeleteModal: (id) => {
+        chat.deletingConversationId = id;
+        const modal = document.getElementById('deleteModal');
+        if (modal) {
+            modal.classList.remove('hidden');
         }
     },
 
-    // Handles active deletion prompt
-    handleDeleteActive: async () => {
-        if (!chat.activeConversationId) return;
-        const confirmDelete = confirm('Are you sure you want to delete this conversation thread? This deletes all associated message logs and ingested vectors permanently.');
-        
-        if (confirmDelete) {
-            try {
-                await api.deleteConversation(chat.activeConversationId);
-                const index = chat.conversations.findIndex(c => c.id === chat.activeConversationId);
-                if (index !== -1) {
-                    chat.conversations.splice(index, 1);
-                }
-                chat.resetToWelcome();
-                ui.showToast('Conversation deleted', 'success');
-            } catch (error) {
-                ui.showToast('Failed to delete conversation');
+    closeDeleteModal: () => {
+        chat.deletingConversationId = null;
+        const modal = document.getElementById('deleteModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    },
+
+    executeDelete: async () => {
+        const id = chat.deletingConversationId;
+        if (!id) return;
+
+        try {
+            await api.deleteConversation(id);
+            const index = chat.conversations.findIndex(c => c.id === id);
+            if (index !== -1) {
+                chat.conversations.splice(index, 1);
             }
+            
+            if (id === chat.activeConversationId) {
+                chat.resetToWelcome();
+            } else {
+                chat.renderConversationsList();
+            }
+            
+            ui.showToast('Conversation deleted', 'success');
+        } catch (error) {
+            ui.showToast('Failed to delete conversation');
+        } finally {
+            chat.closeDeleteModal();
         }
     }
 };
 
-window.chat = chat; // Expose globally for convenience
+window.chat = chat;

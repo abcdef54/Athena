@@ -2,8 +2,6 @@
 # LocalMind .gitignore configuration
 # ==========================================
 
-migrations/
-
 # --- Virtual Environments ---
 .venv/
 venv/

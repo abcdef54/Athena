@@ -144,13 +144,14 @@ export const api = {
     },
 
     // 12. Send message prompt
-    sendChatMessage: async (conversationId, content, deepThink = false) => {
+    sendChatMessage: async (conversationId, content, deepThink = false, personality = 'general') => {
         return await fetchAPI('/chat', {
             method: 'POST',
             body: JSON.stringify({
                 conversation_id: conversationId,
                 content: content,
-                deep_think: deepThink
+                deep_think: deepThink,
+                personality: personality
             })
         });
     },
