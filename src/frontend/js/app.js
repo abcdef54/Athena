@@ -163,9 +163,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const card = document.querySelector('.auth-card');
         const originalContent = card.innerHTML;
         card.innerHTML = `
-            <div class="auth-logo">✧ Athena 2.0</div>
+            <div class="auth-logo">✧ Athena</div>
             <div class="loader" style="width:40px; height:40px; margin:30px auto;"></div>
-            <div class="auth-subtitle" style="color:var(--accent-cyan);">Completing Google Authentication Handshake...</div>
+            <div class="auth-subtitle" style="color:var(--accent-primary);">Completing Google Authentication Handshake...</div>
         `;
 
         try {

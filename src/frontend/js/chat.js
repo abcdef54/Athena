@@ -366,7 +366,7 @@ export const chat = {
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                 </div>
-                ${chat.deepThink ? '<div style="font-size:0.75rem; color:var(--accent-cyan); margin-top:4px; font-weight:500; text-transform:uppercase; letter-spacing:0.5px; text-shadow:0 0 6px rgba(0,210,255,0.3);">Athena is thinking...</div>' : ''}
+                ${chat.deepThink ? '<div style="font-size:0.75rem; color:var(--accent-primary); margin-top:4px; font-weight:500; text-transform:uppercase; letter-spacing:0.5px; text-shadow:0 0 6px rgba(0,162,255,0.3);">Athena is thinking...</div>' : ''}
             </div>
         `;
         container.appendChild(div);

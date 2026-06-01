@@ -159,7 +159,7 @@ export const attachments = {
         const originalText = dropZone.innerHTML;
         dropZone.innerHTML = `
             <div class="loader" style="margin: 0 auto 10px;"></div>
-            <div class="drop-text" style="color:var(--accent-cyan);">Ingesting files... Please wait</div>
+            <div class="drop-text" style="color:var(--accent-primary);">Ingesting files... Please wait</div>
         `;
 
         try {

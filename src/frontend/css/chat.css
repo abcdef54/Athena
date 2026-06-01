@@ -99,7 +99,7 @@
 .welcome-icon {
     font-size: 48px;
     margin-bottom: 16px;
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     opacity: 0.8;
@@ -306,11 +306,11 @@ textarea:disabled {
 
 .send-btn {
     margin-bottom: 2px;
-    color: var(--accent-cyan);
+    color: var(--accent-primary);
 }
 
 .send-btn:hover:not(:disabled) {
-    background: rgba(0, 210, 255, 0.1);
+    background: rgba(0, 162, 255, 0.1);
 }
 
 .input-footer {

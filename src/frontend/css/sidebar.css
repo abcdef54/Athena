@@ -39,8 +39,8 @@
 .logo::before {
     content: "✧";
     font-size: 1.2rem;
-    color: var(--accent-cyan);
-    -webkit-text-fill-color: var(--accent-cyan);
+    color: var(--accent-primary);
+    -webkit-text-fill-color: var(--accent-primary);
 }
 
 .new-chat-btn {
@@ -130,7 +130,7 @@
     transform: translateY(-50%);
     height: 60%;
     width: 3px;
-    background: var(--accent-cyan);
+    background: var(--accent-primary);
     border-radius: 0 4px 4px 0;
 }
 
@@ -149,7 +149,7 @@
 
 .conversation-item.active .conv-icon {
     opacity: 1;
-    color: var(--accent-cyan);
+    color: var(--accent-primary);
 }
 
 .empty-state {

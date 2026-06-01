@@ -10,11 +10,9 @@
 
     /* System Interaction Elements */
     --accent-primary: #00a2ff;
-    /* Vivid Apple Cyan */
+    /* Vivid Apple Cyan/Blue */
     --accent-purple: #a855f7;
     /* Deep neon purple */
-    --accent-cyan: #00d2ff;
-    /* Keeping existing cyan for backward compatibility */
     --accent-blue: #2970ff;
     /* Keeping existing blue for backward compatibility */
     --accent-blue-hover: #1e5de6;
@@ -160,8 +158,8 @@
 
 .personality-select:focus,
 .personality-dropdown-trigger:focus:not(.disabled) {
-    border-color: var(--accent-cyan);
-    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 0 8px rgba(0, 210, 255, 0.2);
+    border-color: var(--accent-primary);
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 0 8px rgba(0, 162, 255, 0.2);
 }
 
 /* Custom dropdown structures */
@@ -231,7 +229,7 @@
 
 .personality-dropdown-item.active {
     background: rgba(255, 255, 255, 0.15) !important;
-    color: var(--accent-cyan) !important;
+    color: var(--accent-primary) !important;
     font-weight: 600;
 }
 
@@ -406,7 +404,7 @@
 /* Inline Rename Input field */
 .conversation-rename-input {
     background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid var(--accent-cyan) !important;
+    border: 1px solid var(--accent-primary) !important;
     border-radius: var(--radius-sm);
     color: var(--text-primary) !important;
     font-size: 0.9rem;
@@ -519,7 +517,7 @@
 
 .math-inline .katex {
     font-size: 1.05em;
-    color: var(--accent-cyan);
+    color: var(--accent-primary);
 }
 
 /* Override KaTeX default color to match theme */
@@ -591,7 +589,7 @@
     font-size: 0.78rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--accent-cyan);
+    color: var(--accent-primary);
     white-space: nowrap;
 }
 
@@ -634,7 +632,7 @@
     border-radius: 4px;
     font-size: 0.82rem;
     font-family: 'Menlo', 'Consolas', monospace;
-    color: var(--accent-cyan);
+    color: var(--accent-primary);
 }
 
 /* Custom scrollbar for wide tables */
@@ -671,7 +669,7 @@
 }
 
 .tools-menu-btn:hover {
-    color: var(--accent-cyan) !important;
+    color: var(--accent-primary) !important;
 }
 
 /* Popup Panel */
@@ -739,7 +737,7 @@
 
 .tools-list-item:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-left-color: var(--accent-cyan);
+    border-left-color: var(--accent-primary);
 }
 
 .tool-icon {
@@ -764,7 +762,7 @@
 }
 
 .tools-list-item:hover .tool-name {
-    color: var(--accent-cyan);
+    color: var(--accent-primary);
 }
 
 .tool-desc {
