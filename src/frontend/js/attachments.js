@@ -3,35 +3,32 @@ import { ui } from './ui.js';
 import { chat } from './chat.js';
 
 export const attachments = {
-    activeProvider: 'google_drive', // Default to Google Drive
+    activeProvider: 'google_drive',
     conversationFiles: [],
     isUploading: false,
 
-    // Initialize DOM selectors and bindings
     init: () => {
         const dropZone = document.getElementById('dragDropZone');
         const fileInput = document.getElementById('fileInput');
         const browseLink = document.getElementById('browseFilesLink');
         const bulkBtn = document.getElementById('bulkCleanBtn');
-        
+
         const btnGoogle = document.getElementById('providerBtnGoogle');
         const btnLocal = document.getElementById('providerBtnLocal');
 
-        // Browse trigger click
         if (browseLink) {
             browseLink.addEventListener('click', (e) => {
                 e.stopPropagation();
                 fileInput.click();
             });
         }
-        
+
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 attachments.handleFilesSelected(e.target.files);
             }
         });
 
-        // Provider Selector Toggling (Default: Google Drive)
         if (btnGoogle && btnLocal) {
             btnGoogle.addEventListener('click', () => {
                 attachments.activeProvider = 'google_drive';
@@ -48,7 +45,6 @@ export const attachments = {
             });
         }
 
-        // Drag and Drop Zone Highlighting
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -65,26 +61,23 @@ export const attachments = {
             e.preventDefault();
             e.stopPropagation();
             dropZone.classList.remove('dragover');
-            
+
             if (e.dataTransfer.files.length > 0) {
                 attachments.handleFilesSelected(e.dataTransfer.files);
             }
         });
 
-        // Dragover window body to reveal drawer (highly premium UX)
         window.addEventListener('dragenter', (e) => {
             ui.openDrawer();
         });
 
-        // Bulk Clean Button
         bulkBtn.addEventListener('click', () => attachments.handleBulkClean());
     },
 
-    // Retrieve file list for active thread
     loadForConversation: async (conversationId) => {
         attachments.conversationFiles = [];
         attachments.resetDrawerFiles();
-        
+
         try {
             const data = await api.getConversationAttachments(conversationId);
             attachments.conversationFiles = data || [];
@@ -95,22 +88,19 @@ export const attachments = {
         }
     },
 
-    // Clear drawer files list representation
     resetDrawerFiles: () => {
         const fileList = document.getElementById('drawerFileList');
         const emptyState = document.getElementById('drawerFileEmpty');
-        
+
         fileList.innerHTML = '';
         fileList.appendChild(emptyState);
         emptyState.classList.remove('hidden');
     },
 
-    // Render cards for files inside upload drawer
     renderFileList: () => {
         const fileList = document.getElementById('drawerFileList');
         const emptyState = document.getElementById('drawerFileEmpty');
-        
-        // Remove old items but keep empty state hidden
+
         Array.from(fileList.children).forEach(child => {
             if (child.id !== 'drawerFileEmpty') {
                 child.remove();
@@ -128,8 +118,7 @@ export const attachments = {
             const sizeKB = (file.file_size / 1024).toFixed(1);
             const item = document.createElement('div');
             item.className = 'uploaded-file-item';
-            
-            // Format icon based on extension
+
             let fileIcon = '📄';
             if (file.file_type.includes('pdf')) fileIcon = '📕';
             else if (file.file_type.includes('word') || file.file_name.endsWith('.docx')) fileIcon = '📘';
@@ -152,11 +141,10 @@ export const attachments = {
                     </svg>
                 </button>
             `;
-            
-            // Bind Delete File icon
+
             const delBtn = item.querySelector('button');
             delBtn.addEventListener('click', () => attachments.deleteFile(file.id, file.storage_provider));
-            
+
             fileList.appendChild(item);
         });
     },
@@ -165,7 +153,7 @@ export const attachments = {
     handleFilesSelected: async (filesList) => {
         if (attachments.isUploading) return;
         attachments.isUploading = true;
-        
+
         // Show indicator on Dropzone
         const dropZone = document.getElementById('dragDropZone');
         const originalText = dropZone.innerHTML;
@@ -182,17 +170,17 @@ export const attachments = {
                     const newThread = await chat.createNewChat(threadTitle);
                     if (!newThread) throw new Error("Could not initialize thread for upload");
                 }
-                
+
                 const activeId = chat.activeConversationId;
-                
+
                 // Trigger file post
                 const data = await api.uploadFile(activeId, file, attachments.activeProvider);
                 attachments.conversationFiles.unshift(data);
                 ui.showToast(`Ingested ${file.name} successfully`, 'success');
             }
-            
+
             attachments.renderFileList();
-            
+
             // Reload message history in active thread since ingestion changes citation lookups
             if (chat.activeConversationId) {
                 await chat.loadMessages(chat.activeConversationId);
@@ -221,12 +209,12 @@ export const attachments = {
 
         try {
             await api.deleteAttachment(conversationId, fileId, provider);
-            
+
             // Remove from local list
             attachments.conversationFiles = attachments.conversationFiles.filter(f => f.id !== fileId);
             attachments.renderFileList();
             ui.showToast('Document deleted and vector store updated', 'success');
-            
+
             // Reload messages to update any citations
             await chat.loadMessages(conversationId);
         } catch (error) {
@@ -267,4 +255,4 @@ export const attachments = {
     }
 };
 
-window.attachments = attachments; // Expose globally for convenience
+window.attachments = attachments;

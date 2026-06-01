@@ -3,24 +3,20 @@ import { api } from './api.js';
 export const auth = {
     user: null,
 
-    // Save token to localStorage
     setToken: (token) => {
         localStorage.setItem('athena_token', token);
     },
 
-    // Get token from localStorage
     getToken: () => {
         return localStorage.getItem('athena_token');
     },
 
-    // Clear session details
     clearToken: () => {
         localStorage.removeItem('athena_token');
         localStorage.removeItem('activeConversationId');
         auth.user = null;
     },
 
-    // Handle login using API and save token
     login: async (email, password) => {
         try {
             const data = await api.login(email, password);
@@ -37,12 +33,10 @@ export const auth = {
         }
     },
 
-    // Handle register using API
     register: async (email, password) => {
         return await api.register(email, password);
     },
 
-    // Check active session by fetching profile details
     checkSession: async () => {
         const token = auth.getToken();
         if (!token) {
@@ -58,7 +52,6 @@ export const auth = {
         }
     },
 
-    // Trigger Google OAuth authorize redirect handshake
     initiateGoogleLogin: async () => {
         try {
             const data = await api.getGoogleAuthorizeUrl();
@@ -73,7 +66,6 @@ export const auth = {
         }
     },
 
-    // Capture OAuth callback parameters and authenticate session
     handleGoogleCallback: async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
@@ -87,7 +79,6 @@ export const auth = {
                     auth.setToken(data.access_token);
                     auth.user = await api.getMe();
 
-                    // Clean URL parameters by replacing state without query params
                     const cleanUrl = window.location.origin + window.location.pathname;
                     window.history.replaceState({}, document.title, cleanUrl);
 
@@ -102,14 +93,12 @@ export const auth = {
         return null;
     },
 
-    // Log out of session
     logout: async () => {
         try {
-            // Optional call to backend logout (best-effort)
             await fetchAPI('/auth/jwt/logout', { method: 'POST' }).catch(() => { });
         } catch (e) { }
         auth.clearToken();
     }
 };
 
-window.auth = auth; // Expose globally for convenience
+window.auth = auth;

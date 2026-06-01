@@ -12,7 +12,6 @@ export const chat = {
     personality: 'general',
     deletingConversationId: null,
 
-    // Initialize event handlers and listeners
     init: () => {
         const input = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -28,7 +27,7 @@ export const chat = {
             sendBtn.disabled = input.value.trim().length === 0 || chat.isWaiting;
         });
 
-        // Keydown handling (Enter to send, Shift+Enter for newline)
+        // Keydown handling
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -45,17 +44,17 @@ export const chat = {
             }
         });
 
-        // Deep Think switch toggling
+        // Deep Think
         deepThinkToggle.addEventListener('change', (e) => {
             chat.deepThink = e.target.checked;
-            ui.showToast(`Deep Think ${chat.deepThink ? 'Enabled (Neon reasoning mode)' : 'Disabled'}`, 'success');
+            ui.showToast(`Deep Think ${chat.deepThink ? 'Enabled' : 'Disabled'}`, 'success');
         });
 
-        // Personality Dropdown trigger
+        // Personality
         if (personalitySelect) {
             personalitySelect.addEventListener('change', (e) => {
                 chat.personality = e.target.value;
-                ui.showToast(`Active Personality set to: ${chat.personality.toUpperCase()}`, 'success');
+                ui.showToast(`Personality set to: ${chat.personality.toUpperCase()}`, 'success');
             });
         }
 
@@ -84,7 +83,7 @@ export const chat = {
 
         // Sidebar new chat trigger
         newChatBtn.addEventListener('click', () => chat.createNewChat());
-        
+
         // Setup initial disabled inputs representing Welcome state
         input.disabled = false;
         input.placeholder = "Message Athena...";
@@ -96,16 +95,16 @@ export const chat = {
         const loader = document.getElementById('sidebarLoader');
         const emptyState = document.getElementById('sidebarEmpty');
         const ul = document.getElementById('conversationList');
-        
+
         loader.classList.remove('hidden');
         ul.innerHTML = '';
         emptyState.classList.add('hidden');
-        
+
         try {
             const data = await api.getConversations();
             // Chronological sort: newest first
             chat.conversations = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            
+
             if (chat.conversations.length === 0) {
                 emptyState.classList.remove('hidden');
             } else {
@@ -122,12 +121,12 @@ export const chat = {
     renderConversationsList: () => {
         const ul = document.getElementById('conversationList');
         ul.innerHTML = '';
-        
+
         chat.conversations.forEach(conv => {
             const li = document.createElement('li');
             li.className = `conversation-item ${conv.id === chat.activeConversationId ? 'active' : ''}`;
             li.dataset.id = conv.id;
-            
+
             li.innerHTML = `
                 <svg class="conv-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -148,7 +147,7 @@ export const chat = {
                     </button>
                 </div>
             `;
-            
+
             li.addEventListener('click', (e) => {
                 // If clicking active element, do not switch if input is active
                 if (li.querySelector('.conversation-rename-input')) return;
@@ -196,10 +195,10 @@ export const chat = {
     selectConversation: async (id) => {
         chat.activeConversationId = id;
         localStorage.setItem('activeConversationId', id);
-        
+
         // Render updated active class list
         chat.renderConversationsList();
-        
+
         const conv = chat.conversations.find(c => c.id === id);
         const chatTitle = document.getElementById('chatTitle');
 
@@ -208,14 +207,14 @@ export const chat = {
         } else {
             chatTitle.textContent = 'Select a conversation';
         }
-        
+
         // Hide File Drawer if open
         ui.closeDrawer();
 
         // Load message history & attachments list
         await chat.loadMessages(id);
         await attachments.loadForConversation(id);
-        
+
         // Close sidebar backdrop for mobile views
         ui.closeMobileSidebar();
     },
@@ -225,12 +224,12 @@ export const chat = {
         chat.activeConversationId = null;
         localStorage.removeItem('activeConversationId');
         chat.renderConversationsList();
-        
+
         document.getElementById('chatTitle').textContent = 'Select a conversation';
-        
+
         const container = document.getElementById('messagesContainer');
         const emptyState = document.getElementById('chatEmptyState');
-        
+
         // Clear old message views
         Array.from(container.children).forEach(child => {
             if (child.id !== 'chatEmptyState') {
@@ -238,13 +237,13 @@ export const chat = {
             }
         });
         emptyState.classList.remove('hidden');
-        
+
         // Reset inputs
         const input = document.getElementById('messageInput');
         input.value = '';
         input.style.height = 'auto';
         input.disabled = false;
-        
+
         attachments.resetDrawerFiles();
         ui.closeDrawer();
     },
@@ -254,22 +253,22 @@ export const chat = {
         chat.messages = [];
         const container = document.getElementById('messagesContainer');
         const emptyState = document.getElementById('chatEmptyState');
-        
+
         // Clear container except welcome screen
         Array.from(container.children).forEach(child => {
             if (child.id !== 'chatEmptyState') {
                 child.remove();
             }
         });
-        
+
         try {
             const data = await api.getConversationMessages(id);
             if (data && data.length > 0) {
                 emptyState.classList.add('hidden');
-                
+
                 // Chronological sort: oldest first
                 const sorted = data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                
+
                 const fragment = document.createDocumentFragment();
                 for (const msg of sorted) {
                     chat.messages.push(msg);
@@ -291,9 +290,9 @@ export const chat = {
         const div = document.createElement('div');
         div.className = `message ${msg.role === 'user' ? 'user' : 'assistant'}`;
         div.dataset.id = msg.id;
-        
+
         const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
+
         div.innerHTML = `
             <div class="message-bubble">
                 <div class="message-content">
@@ -311,10 +310,10 @@ export const chat = {
                 const citations = await api.getMessageSources(msg.conversation_id, msg.id);
                 if (citations && citations.length > 0) {
                     const bubble = div.querySelector('.message-bubble');
-                    
+
                     const citationWrapper = document.createElement('div');
                     citationWrapper.className = 'citations-wrapper';
-                    
+
                     citations.forEach((cit, idx) => {
                         const pill = document.createElement('button');
                         pill.className = 'citation-pill';
@@ -330,14 +329,14 @@ export const chat = {
                         });
                         citationWrapper.appendChild(pill);
                     });
-                    
+
                     bubble.appendChild(citationWrapper);
                 }
             } catch (err) {
                 console.error(`Citations fetch failed for message ${msg.id}:`, err);
             }
         }
-        
+
         return div;
     },
 
@@ -348,7 +347,7 @@ export const chat = {
 
         chat.messages.push(msg);
         const node = await chat.createMessageNode(msg);
-        
+
         const container = document.getElementById('messagesContainer');
         container.appendChild(node);
         ui.scrollToBottom('messagesContainer');
@@ -387,7 +386,7 @@ export const chat = {
         const input = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
         const deepThinkToggle = document.getElementById('deepThinkToggle');
-        
+
         if (waiting) {
             input.disabled = true;
             sendBtn.disabled = true;
@@ -416,17 +415,14 @@ export const chat = {
         chat.setWaitingState(true);
 
         try {
-            // Auto-create thread if in Welcome view
             if (!chat.activeConversationId) {
-                // Determine a nice title from first user query
                 const initialTitle = content.length > 20 ? content.substring(0, 20) + "..." : content;
                 const newConv = await chat.createNewChat(initialTitle);
                 if (!newConv) throw new Error("Could not initialize thread");
             }
-            
+
             const activeId = chat.activeConversationId;
 
-            // Render optimistic user message
             const tempId = 'temp-' + Date.now();
             const userMsg = {
                 id: tempId,
@@ -437,12 +433,10 @@ export const chat = {
             };
             await chat.appendMessage(userMsg);
 
-            // Fetch AI prompt response (attaching active personality)
             const responseMsg = await api.sendChatMessage(activeId, content, chat.deepThink, chat.personality);
-            
+
             chat.setWaitingState(false);
-            
-            // Render genuine assistant message
+
             await chat.appendMessage(responseMsg);
         } catch (error) {
             chat.setWaitingState(false);
@@ -462,11 +456,11 @@ export const chat = {
 
         const convIcon = li.querySelector('.conv-icon');
         const convActions = li.querySelector('.conv-actions');
-        
+
         if (convIcon) convIcon.style.display = 'none';
         if (convActions) convActions.style.display = 'none';
         titleSpan.style.display = 'none';
-        
+
         li.appendChild(input);
         input.focus();
         input.select();
@@ -476,7 +470,7 @@ export const chat = {
         const commitRename = async () => {
             if (finished) return;
             finished = true;
-            
+
             const newTitle = input.value.trim();
             if (newTitle && newTitle !== currentTitle) {
                 try {
@@ -493,7 +487,7 @@ export const chat = {
                     ui.showToast('Failed to rename conversation');
                 }
             }
-            
+
             chat.renderConversationsList();
         };
 
@@ -545,13 +539,13 @@ export const chat = {
             if (index !== -1) {
                 chat.conversations.splice(index, 1);
             }
-            
+
             if (id === chat.activeConversationId) {
                 chat.resetToWelcome();
             } else {
                 chat.renderConversationsList();
             }
-            
+
             ui.showToast('Conversation deleted', 'success');
         } catch (error) {
             ui.showToast('Failed to delete conversation');

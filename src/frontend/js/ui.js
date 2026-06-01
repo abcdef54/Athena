@@ -16,25 +16,83 @@ export const ui = {
         }, 4000);
     },
 
-    // In-depth Markdown parser
+    // In-depth Markdown parser (v3.0: KaTeX + Highlight.js)
     renderMarkdown: (text) => {
         if (!text) return '';
         
         let html = text;
-        
-        // Escape HTML to prevent XSS
+
+        // ── Step 1: Protect LaTeX and code blocks from HTML escaping ──
+        // Extract and stash blocks that contain raw syntax before escaping.
+        const stash = [];
+        const stashPlaceholder = (content) => {
+            const idx = stash.length;
+            stash.push(content);
+            return `%%STASH_${idx}%%`;
+        };
+
+        // Stash fenced code blocks: ```lang\ncode```
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+            const langLabel = lang ? lang.toUpperCase() : 'CODE';
+            let highlighted;
+            try {
+                if (lang && window.hljs && window.hljs.getLanguage(lang)) {
+                    highlighted = window.hljs.highlight(code.trimEnd(), { language: lang }).value;
+                } else if (window.hljs) {
+                    highlighted = window.hljs.highlightAuto(code.trimEnd()).value;
+                } else {
+                    // Fallback: escape HTML manually
+                    highlighted = code.trimEnd()
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                }
+            } catch {
+                highlighted = code.trimEnd()
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            }
+            const block = `<pre class="code-panel"><div class="code-header"><span class="code-lang">${langLabel}</span><button class="copy-code-btn" onclick="copyToClipboard(this)">Copy</button></div><code class="hljs">${highlighted}</code></pre>`;
+            return stashPlaceholder(block);
+        });
+
+        // Stash block math: $$...$$
+        html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+            let rendered;
+            try {
+                rendered = window.katex
+                    ? window.katex.renderToString(math.trim(), { displayMode: true, throwOnError: false })
+                    : `<code>${math.trim()}</code>`;
+            } catch {
+                rendered = `<code>${math.trim()}</code>`;
+            }
+            return stashPlaceholder(`<div class="math-block">${rendered}</div>`);
+        });
+
+        // Stash inline math: $...$  (with numerical currency guard)
+        html = html.replace(/(?<!\$)\$([^$\n]+?)\$(?!\$)/g, (match, math) => {
+            // Guard: skip pure currency like $100, $45.50, $1,200
+            if (/^\s*[\d,]+(\.\d+)?\s*$/.test(math)) return match;
+            let rendered;
+            try {
+                rendered = window.katex
+                    ? window.katex.renderToString(math.trim(), { displayMode: false, throwOnError: false })
+                    : `<code>${math.trim()}</code>`;
+            } catch {
+                rendered = `<code>${math.trim()}</code>`;
+            }
+            return stashPlaceholder(`<span class="math-inline">${rendered}</span>`);
+        });
+
+        // ── Step 2: Escape HTML (XSS prevention) ──
         html = html.replace(/&/g, '&amp;')
                    .replace(/</g, '&lt;')
                    .replace(/>/g, '&gt;')
                    .replace(/"/g, '&quot;')
                    .replace(/'/g, '&#039;');
-        
-        // Code Blocks with syntax highlight structures
-        html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
-            return `
-            <pre><div class="code-header"><span>Code</span></div><code>${code.trim()}</code></pre>`;
-        });
-        
+
+        // ── Step 3: Standard Markdown transformations ──
         // Inline Code
         html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
@@ -49,6 +107,23 @@ export const ui = {
         html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
         html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
 
+        // Tables (pipe-delimited markdown syntax)
+        html = html.replace(/(^\|.+\|\s*\n)(^\|[\s:|-]+\|\s*\n)((?:^\|.+\|\s*\n?)+)/gm, (match, headerRow, separatorRow, bodyRows) => {
+            // Parse header cells
+            const headers = headerRow.trim().split('|').filter(c => c.trim() !== '');
+            const thCells = headers.map(h => `<th>${h.trim()}</th>`).join('');
+
+            // Parse body rows
+            const rows = bodyRows.trim().split('\n').filter(r => r.trim());
+            const tbodyRows = rows.map(row => {
+                const cells = row.trim().split('|').filter(c => c.trim() !== '');
+                const tdCells = cells.map(c => `<td>${c.trim()}</td>`).join('');
+                return `<tr>${tdCells}</tr>`;
+            }).join('');
+
+            return `<div class="table-wrapper"><table class="md-table"><thead><tr>${thCells}</tr></thead><tbody>${tbodyRows}</tbody></table></div>`;
+        });
+
         // Lists
         html = html.replace(/^\- (.*?)$/gm, '<li>$1</li>');
         html = html.replace(/^\* (.*?)$/gm, '<li>$1</li>');
@@ -58,10 +133,13 @@ export const ui = {
         // Paragraph formatting (break on double newline, represent single line breaks)
         const parts = html.split(/\n\n+/);
         html = parts.map(p => {
-            if (p.trim().startsWith('<pre>') || p.trim().startsWith('<ul>') || p.trim().startsWith('<h')) return p;
+            if (p.trim().startsWith('<pre') || p.trim().startsWith('<ul>') || p.trim().startsWith('<h') || p.trim().startsWith('<div class="math') || p.trim().startsWith('<div class="table')) return p;
             const lineBreaks = p.replace(/\n/g, '<br>');
             return `<p>${lineBreaks}</p>`;
         }).join('');
+
+        // ── Step 4: Restore stashed blocks ──
+        html = html.replace(/%%STASH_(\d+)%%/g, (match, idx) => stash[parseInt(idx)]);
         
         return html;
     },
@@ -207,3 +285,22 @@ export const ui = {
 };
 
 window.ui = ui; // Expose globally for convenience
+
+// ── Global Copy-to-Clipboard helper for code blocks ──
+window.copyToClipboard = (buttonElement) => {
+    const codeEl = buttonElement.closest('pre').querySelector('code');
+    if (!codeEl) return;
+
+    const rawText = codeEl.textContent || codeEl.innerText;
+    navigator.clipboard.writeText(rawText).then(() => {
+        buttonElement.textContent = 'Copied!';
+        buttonElement.classList.add('copied');
+        setTimeout(() => {
+            buttonElement.textContent = 'Copy';
+            buttonElement.classList.remove('copied');
+        }, 2000);
+    }).catch(() => {
+        buttonElement.textContent = 'Error';
+        setTimeout(() => { buttonElement.textContent = 'Copy'; }, 2000);
+    });
+};
