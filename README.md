@@ -10,12 +10,19 @@ Athena is a high-performance conversational intelligence platform. The system in
 ## 🌟 Core Features
 
 *   **Asynchronous LangChain Agentic Brain**: Leverages a highly scalable backend enabling multi-step tool reasoning with LangChain and LangGraph cognitive workflows, dynamically routing Google Search, contextual document queries, email reading, and URL contents fetching.
+
 *   **Multi-Tenant RAG Pipeline (Chroma DB)**: Connects to a robust, thread-safe local Chroma vector database isolated by user ID, supporting parsing, indexing, oversampling, content deduplication, and vector similarity search across `.pdf`, `.docx`, `.md`, `.txt` files, and also fully supports raw code files (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`).
+
 *   **Isolated Ingestion & Uploads**: Supports drag-and-drop document ingestion, managing files locally or linking directly to Google Drive, ensuring safe storage, indexation, and vector cleanups.
+
 *   **Persistent Conversation Memory**: Retains session history across logical thread channels, enabling contextual follow-up turns backed by robust PostgreSQL and async SQLAlchemy memory caches.
+
 *   **Secure Multi-Provider Auth & Storage**: Integrated with standard local JWT credentials and offline Google OAuth scopes, defaulting documents storage to Google Drive with Local Storage fallbacks.
+
 *   **Math & Syntax Rendering Engine**: Handles real-time client-side compilation of KaTeX display math, inline formulas (with currency guards), and Highlight.js programming code syntax with Copy-to-Clipboard hooks.
+
 *   **Lightweight Glass Design**: Organized as a responsive Single Page App utilizing fluid glass panels, Dynamic Island center titles, absolute-positioned mobile controls, and standard-setting clearing margins.
+
 *   **Soft-Delete DB Architecture**: Implements logical SQLAlchemy and PostgreSQL `deleted_at` cascade soft-delete timestamps, ensuring robust user data integrity and thread history retention.
 
 ---
@@ -29,7 +36,8 @@ Athena has evolved through key development stages to reach its final production-
 *   **Athena v2.2 (Soft-Delete Migration)**: Auditable data persistence using logical `deleted_at` cascades across SQLAlchemy database models.
 *   **Athena v3.0 (Rich Formatting)**: Rich educational rendering including KaTeX LaTeX mathematical notations, Highlight.js code editors, and Copy-to-Clipboard glass overlays.
 *   **Athena v3.1 & v3.1.1 (Tables & Tools Showcase)**: Added pipe-delimited grid-table support with scroll controls, and an Agent Tools drawer displaying modular workflows.
-*   **Athena v3.2 & v3.2.1 (Refinement & Standardizations) [LATEST]**: Transitioned UI to a lightweight glass design with dynamic wallpapers.
+*   **Athena v3.2 & v3.2.1 (Refinement & Standardizations)**: Transitioned UI to a lightweight glass design with dynamic wallpapers.
+*   **Athena v3.2.5 (Lazy Threads, Code RAG & Personalities) [LATEST]**: Introduced lazy conversation generation (thread database allocation on first prompt), raw code file ingestion (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`) to the RAG pipeline, a standalone local `👤 Human` conversational personality, and user free usage limit enforcement.
 
 ---
 
