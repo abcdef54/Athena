@@ -63,6 +63,10 @@ Athena is built using a clean, modern, and highly modular technology stack desig
 ### Database
 - **PostgreSQL**: Production-grade transactional repository for users, logical session threads, chat attachments, and secure OAuth tokens.
 
+### Deployment & DevOps
+- **Docker**: Containerization engine isolating the Python/FastAPI backend runtime and static asset serving environments.
+- **Docker Compose**: Multi-container orchestration networking the isolated Database, Backend, and Frontend service dependencies into a unified, single-command deployment stack.
+
 ---
 
 ## 📁 Repository Structure
