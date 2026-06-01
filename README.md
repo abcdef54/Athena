@@ -1,16 +1,16 @@
-# ✧ Athena — Conversational AI Platform (v3.2.1)
+# ✧ Athena — Conversational AI Platform
 
 Athena is a high-performance conversational intelligence platform. The system integrates an asynchronous **FastAPI** backend driven by LangChain and LangGraph cognitive workflows, a highly secure multi-tenant session manager, and an isolated **Chroma Vector DB** retrieval-augmented generation (RAG) indexing pipeline. The frontend is built as a lightweight, responsive ES6 single-page application utilizing fluid glass panels with blur effects and dynamic wallpaper options.
 
 > [!IMPORTANT]
-> The Athena project is now complete. This is the final stable version (v3.2.1), and no further updates or active development are planned.
+> The Athena project is now complete. This is the final stable version (v3.2.5), and no further updates or active development are planned.
 
 ---
 
 ## 🌟 Core Features
 
 *   **Asynchronous LangChain Agentic Brain**: Leverages a highly scalable backend enabling multi-step tool reasoning with LangChain and LangGraph cognitive workflows, dynamically routing Google Search, contextual document queries, email reading, and URL contents fetching.
-*   **Multi-Tenant RAG Pipeline (Chroma DB)**: Connects to a robust, thread-safe local Chroma vector database isolated by user ID, supporting parsing, indexing, oversampling, content deduplication, and vector similarity search across `.pdf`, `.docx`, `.md`, and `.txt` documents.
+*   **Multi-Tenant RAG Pipeline (Chroma DB)**: Connects to a robust, thread-safe local Chroma vector database isolated by user ID, supporting parsing, indexing, oversampling, content deduplication, and vector similarity search across `.pdf`, `.docx`, `.md`, `.txt`, and code files (`.py`, `.js`, `.cpp`, `.html`, `.css`).
 *   **Isolated Ingestion & Uploads**: Supports drag-and-drop document ingestion, managing files locally or linking directly to Google Drive, ensuring safe storage, indexation, and vector cleanups.
 *   **Persistent Conversation Memory**: Retains session history across logical thread channels, enabling contextual follow-up turns backed by robust PostgreSQL and async SQLAlchemy memory caches.
 *   **Secure Multi-Provider Auth & Storage**: Integrated with standard local JWT credentials and offline Google OAuth scopes, defaulting documents storage to Google Drive with Local Storage fallbacks.
