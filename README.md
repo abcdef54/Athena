@@ -10,7 +10,7 @@ Athena is a high-performance conversational intelligence platform. The system in
 ## 🌟 Core Features
 
 *   **Asynchronous LangChain Agentic Brain**: Leverages a highly scalable backend enabling multi-step tool reasoning with LangChain and LangGraph cognitive workflows, dynamically routing Google Search, contextual document queries, email reading, and URL contents fetching.
-*   **Multi-Tenant RAG Pipeline (Chroma DB)**: Connects to a robust, thread-safe local Chroma vector database isolated by user ID, supporting parsing, indexing, oversampling, content deduplication, and vector similarity search across `.pdf`, `.docx`, `.md`, `.txt`, and code files (`.py`, `.js`, `.cpp`, `.html`, `.css`).
+*   **Multi-Tenant RAG Pipeline (Chroma DB)**: Connects to a robust, thread-safe local Chroma vector database isolated by user ID, supporting parsing, indexing, oversampling, content deduplication, and vector similarity search across `.pdf`, `.docx`, `.md`, `.txt` files, and also fully supports raw code files (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`).
 *   **Isolated Ingestion & Uploads**: Supports drag-and-drop document ingestion, managing files locally or linking directly to Google Drive, ensuring safe storage, indexation, and vector cleanups.
 *   **Persistent Conversation Memory**: Retains session history across logical thread channels, enabling contextual follow-up turns backed by robust PostgreSQL and async SQLAlchemy memory caches.
 *   **Secure Multi-Provider Auth & Storage**: Integrated with standard local JWT credentials and offline Google OAuth scopes, defaulting documents storage to Google Drive with Local Storage fallbacks.
