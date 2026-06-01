@@ -22,7 +22,8 @@ AGENTS = {
     'coder': make_agent('coder'),
     'genz': make_agent('genz'),
     'unhinged': make_agent('unhinged'),
-    'assistant': make_agent('assistant')
+    'assistant': make_agent('assistant'),
+    'human': make_agent('human'),
 }
 
 @router.post("")
