@@ -218,6 +218,25 @@ Athena is built entirely on client-side modules:
     ```
 *   Access `http://127.0.0.1:5500/src/frontend/index.html` in your web browser.
 
+### 6. Docker-Compose Setup (Alternative & Recommended)
+If you prefer to run the entire stack (PostgreSQL Database, FastAPI Backend, and Nginx Frontend) in containerized environments with a single command:
+
+1. **Ensure Docker is running** on your system.
+2. **Create the `.env` file** in the project root containing your required credentials (as specified in step 2).
+3. **Start all services** in built/hot-reload mode:
+   ```bash
+   docker-compose up --build
+   ```
+4. **Access the application**:
+   - **Frontend UI Client**: `http://localhost:5500` (served via Nginx container)
+   - **FastAPI API Server**: `http://localhost:8000` (served via Uvicorn backend container)
+   - **PostgreSQL Database**: Port `5433` maps to database container port `5432` locally (so you can inspect it with PgAdmin or DBeaver using password `admin` and username `postgres`).
+
+To stop and remove all container resources, networks, and configurations:
+```bash
+docker-compose down
+```
+
 ---
 
 ## 🔌 API Reference
