@@ -158,16 +158,19 @@ export const attachments = {
         if (attachments.isUploading) return;
         attachments.isUploading = true;
 
-        // Show indicator on Dropzone
-        const dropZone = document.getElementById('dragDropZone');
-        const originalText = dropZone.innerHTML;
-        dropZone.innerHTML = `
-            <div class="loader" style="margin: 0 auto 10px;"></div>
-            <div class="drop-text" style="color:var(--accent-primary);">Ingesting files... Please wait</div>
-        `;
+        // Synchronously convert FileList to standard Array to prevent native GC/invalidation during awaits
+        const filesArray = Array.from(filesList);
+
+        const defaultView = document.getElementById('dropZoneDefaultView');
+        const loadingView = document.getElementById('dropZoneLoadingView');
+
+        if (defaultView && loadingView) {
+            defaultView.classList.add('hidden');
+            loadingView.classList.remove('hidden');
+        }
 
         try {
-            for (const file of filesList) {
+            for (const file of filesArray) {
                 // If in welcome state, create conversation thread dynamically
                 if (!chat.activeConversationId) {
                     const threadTitle = file.name.substring(0, 15) + " context";
@@ -198,8 +201,12 @@ export const attachments = {
             }
         } finally {
             attachments.isUploading = false;
-            dropZone.innerHTML = originalText;
-            document.getElementById('fileInput').value = ''; // Reset input
+            if (defaultView && loadingView) {
+                defaultView.classList.remove('hidden');
+                loadingView.classList.add('hidden');
+            }
+            const input = document.getElementById('fileInput');
+            if (input) input.value = ''; // Reset input
         }
     },
 

@@ -323,10 +323,20 @@
 
                 <!-- Drag and Drop Zone -->
                 <div class="drag-drop-zone" id="dragDropZone">
-                    <div class="drop-icon">📁</div>
-                    <div class="drop-text">Drag & drop files here or <span class="browse-link"
-                            id="browseFilesLink">browse</span></div>
-                    <div class="drop-subtext">Supports PDF, DOCX, MD, TXT, Code files</div>
+                    <!-- Default View -->
+                    <div id="dropZoneDefaultView" style="display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%;">
+                        <div class="drop-icon">📁</div>
+                        <div class="drop-text">Drag & drop files here or <span class="browse-link"
+                                id="browseFilesLink">browse</span></div>
+                        <div class="drop-subtext">Supports PDF, DOCX, MD, TXT, Code files</div>
+                    </div>
+                    
+                    <!-- Loading View -->
+                    <div id="dropZoneLoadingView" class="hidden" style="display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%;">
+                        <div class="loader" style="margin: 0 auto 10px;"></div>
+                        <div class="drop-text" style="color:var(--accent-primary);">Ingesting files... Please wait</div>
+                    </div>
+
                     <input type="file" id="fileInput" multiple class="hidden" accept=".pdf,.docx,.md,.txt,.py,.js,.ts,.c,.cpp,.html,.css">
                 </div>
 
