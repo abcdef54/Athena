@@ -149,29 +149,37 @@ Before booting up the backend, ensure you have a running PostgreSQL instance:
    ```
 
 ### 2. Environment Variables (`.env`)
-Create a `.env` file in the project root with the following configuration layout:
+Create a `.env` file in the project root. Below are the configurations divided by their necessity:
+
+#### Required Keys (Core System)
 ```ini
-# LLM Endpoint & Provider Options
+# PostgreSQL database connection URL
+POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/athena_db"
+
+# Core application encryption key for JWT credentials session validation
+JWT_SECRET_KEY = "your-secure-jwt-secret-string"
+
+# Google Gemini API key and model bindings
+GOOGLE_API_KEY = "your-gemini-api-key"
+GOOGLE_GENERATIVE_AI_MODEL_NAME = "gemini-1.5-flash"
+GOOGLE_EMBEDDING_MODEL_NAME = "text-embedding-004"
+```
+
+#### Optional Keys (Integrations & Diagnostics)
+```ini
+# Google OAuth 2.0 Credentials (Optional: required only for Google Identity flow)
 GOOGLE_CLIENT_ID = "your-google-client-id"
 GOOGLE_CLIENT_SECRET = "your-google-client-secret"
-GOOGLE_API_KEY = "your-gemini-api-key"
-GOOGLE_GENERATIVE_AI_MODEL_NAME = "gemini-3.5-flash"
-GOOGLE_EMBEDDING_MODEL_NAME = "text-embedding-004"
 
-# Tavily Search API
+# Tavily Search Engine API (Optional: enables modular web search tools)
 TAVILY_KEY = "your-tavily-key"
 
-# Google Custom Search API (Alternative tool)
-GOOGLE_SEARCH_AND_MAIL_API = "your-custom-search-api-key"
-GOOGLE_CSE_ID = "https://cse.google.com/cse.js?cx=your-cx-id"
+# AI Inference Fallbacks (Optional: comma-separated list of secondary models)
+GOOGLE_GENEATIVE_AI_FALLBACK_MODELS = "gemini-1.5-pro,gemini-1.0-pro"
 
-# LangSmith Tracing configurations
+# LangSmith / LangChain Tracing (Optional: only needed for logging and diagnostic analytics)
 LANGCHAIN_API_KEY = "your-langchain-api-key"
 LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com"
-
-# PostgreSQL and JWT setups
-POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/athena_db"
-JWT_SECRET_KEY = "your-secure-jwt-secret-string"
 ```
 
 ### 3. Backend Setup
