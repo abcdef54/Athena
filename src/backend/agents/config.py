@@ -3,7 +3,7 @@ import dotenv
 import asyncio
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter, Language
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import (
     PyPDFLoader,
@@ -35,6 +35,15 @@ document_embedding_model = GoogleGenerativeAIEmbeddings(
     task_type='RETRIEVAL_DOCUMENT'
 )
 
+CODE_LANGUAGES = {
+    'py': Language.PYTHON,
+    'cpp': Language.CPP,
+    'c': Language.CPP,
+    'js': Language.JS,
+    'ts': Language.TS,
+    'html': Language.HTML
+}
+
 def _get_user_vector_store(user_id: str) -> Chroma:
     user_db_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), f'../../../uploads/chroma/{user_id}')
@@ -45,18 +54,32 @@ def _get_user_vector_store(user_id: str) -> Chroma:
         persist_directory=user_db_path
     )
 
-def _extract_and_split_docs(file_path: str, file_type: str, text_splitter: RecursiveCharacterTextSplitter) -> list:
+def _extract_and_split_docs(file_path: str, file_type: str, chunk_size: int, chunk_overlap: int) -> list:
     """Synchronous file parser running inside a thread pool worker."""
     if file_type == 'pdf':
         loader = PyPDFLoader(file_path)
     elif file_type == 'docx':
         loader = Docx2txtLoader(file_path)
-    elif file_type in ['md', 'txt']:
+    elif file_type in ['md', 'txt', 'css'] or file_type in CODE_LANGUAGES:
         loader = TextLoader(file_path, encoding="utf-8")
     else:
         raise ValueError(f"Unsupported file format extension: .{file_type}")
         
-    return text_splitter.split_documents(loader.load())
+    if file_type in CODE_LANGUAGES:
+        splitter = RecursiveCharacterTextSplitter.from_language(
+            language=CODE_LANGUAGES[file_type],
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            add_start_index=True
+        )
+    else:
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            add_start_index=True
+        )
+        
+    return splitter.split_documents(loader.load())
 
 
 async def ingest_docs(
@@ -76,16 +99,10 @@ async def ingest_docs(
     loop = asyncio.get_running_loop()
     file_type = os.path.splitext(file_path)[-1].replace(".", "").lower()
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        add_start_index=True
-    )
-
     try:
         print("[DEBUG ingest_docs] Splitting documents and opening Chroma...")
         chunks, vector_store = await asyncio.gather(
-            loop.run_in_executor(None, _extract_and_split_docs, file_path, file_type, text_splitter),
+            loop.run_in_executor(None, _extract_and_split_docs, file_path, file_type, chunk_size, chunk_overlap),
             loop.run_in_executor(None, _get_user_vector_store, user_id)
         )
         print(f"[DEBUG ingest_docs] Document split completed. Generated {len(chunks)} chunks.")
