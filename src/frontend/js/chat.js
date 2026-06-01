@@ -82,7 +82,7 @@ export const chat = {
         }
 
         // Sidebar new chat trigger
-        newChatBtn.addEventListener('click', () => chat.createNewChat());
+        newChatBtn.addEventListener('click', () => chat.startNewChatDraft());
 
         // Setup initial disabled inputs representing Welcome state
         input.disabled = false;
@@ -246,6 +246,37 @@ export const chat = {
 
         attachments.resetDrawerFiles();
         ui.closeDrawer();
+    },
+
+    // Initialize a fresh new chat draft locally without triggering API conversation creations
+    startNewChatDraft: () => {
+        chat.activeConversationId = null;
+        localStorage.removeItem('activeConversationId');
+        chat.renderConversationsList();
+
+        document.getElementById('chatTitle').textContent = 'New Chat';
+
+        const container = document.getElementById('messagesContainer');
+        const emptyState = document.getElementById('chatEmptyState');
+
+        // Clear old message views
+        Array.from(container.children).forEach(child => {
+            if (child.id !== 'chatEmptyState') {
+                child.remove();
+            }
+        });
+        emptyState.classList.remove('hidden');
+
+        // Reset inputs
+        const input = document.getElementById('messageInput');
+        input.value = '';
+        input.style.height = 'auto';
+        input.disabled = false;
+        input.focus();
+
+        attachments.resetDrawerFiles();
+        ui.closeDrawer();
+        ui.closeMobileSidebar();
     },
 
     // Fetch and render historical logs
