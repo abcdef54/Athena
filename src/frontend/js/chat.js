@@ -440,7 +440,19 @@ export const chat = {
             await chat.appendMessage(responseMsg);
         } catch (error) {
             chat.setWaitingState(false);
-            ui.showToast(error.message || 'Failed to send message');
+            if (error.status === 402) {
+                const errorMsg = {
+                    id: 'error-' + Date.now(),
+                    conversation_id: chat.activeConversationId,
+                    content: `**Free Limit Reached**\n\n${error.message}`,
+                    role: 'assistant',
+                    created_at: new Date().toISOString()
+                };
+                await chat.appendMessage(errorMsg);
+                ui.showToast('Free limit reached. Please see cloning instructions.', 'error');
+            } else {
+                ui.showToast(error.message || 'Failed to send message');
+            }
         }
     },
 

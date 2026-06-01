@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Enum, Table
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Enum, Table, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, DeclarativeBase, declared_attr
 from sqlalchemy.sql import func
@@ -25,6 +25,9 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     conversations = relationship("Conversation", back_populates="user", passive_deletes=True, cascade="all, delete-orphan")
     oauth_accounts = relationship('UserOAuthToken', lazy='selectin', back_populates='user', passive_deletes=True, cascade="all, delete-orphan")
     
+    preview_turn_useds = Column(Integer, default=0, server_default=text("0"))
+    max_preview_turn = Column(Integer, default=3, server_default=text("3"))
+
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 

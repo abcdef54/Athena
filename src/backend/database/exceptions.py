@@ -8,3 +8,6 @@ class ConversationNotFound(Exception):
 
 class MessageNotFound(Exception):
     pass
+
+class UserNotFound(Exception):
+    pass

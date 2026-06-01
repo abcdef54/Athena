@@ -14,7 +14,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
 from src.backend.database.models import Conversation, Message, Attachment, StorageProvider, User
-from src.backend.database.exceptions import ConversationNotFound, MessageNotFound
+from src.backend.database.exceptions import ConversationNotFound, MessageNotFound, UserNotFound
 from src.backend.auth import get_google_credentials
 from src.backend.agents.config import _get_user_vector_store, ingest_docs
 
@@ -23,6 +23,29 @@ def coerce_uuid(val):
     if isinstance(val, str):
         return uuid.UUID(val)
     return val
+
+
+async def update_preview_turn_used(
+    user_id: UUID,
+    session: AsyncSession
+) -> User:
+    try:
+        stmt = update(User).where(
+            User.id == user_id,
+            User.deleted_at == None
+        ).values(
+            preview_turn_useds = User.preview_turn_useds + 1
+        )
+        await session.execute(stmt)
+        await session.commit()
+        res = await session.execute(select(User).where(User.id == user_id))
+        user = res.scalar_one_or_none()
+        if not user:
+            raise UserNotFound(f"User {user_id} not found")
+        return user
+    except Exception:
+        await session.rollback()
+        raise
 
 
 

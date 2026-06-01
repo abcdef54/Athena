@@ -1,12 +1,12 @@
 import os
 import dotenv
 
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import Depends, HTTPException, APIRouter, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.auth import current_active_user
 from src.backend.agents import make_agent
-from src.backend.database.exceptions import ConversationNotFound
+from src.backend.database.exceptions import ConversationNotFound, UserNotFound
 from src.backend.database.session import get_async_session
 from src.backend.database.schemas import ChatRequest, ChatResponse
 from src.backend.database.models import User
@@ -37,6 +37,16 @@ async def chat(
     print(f"  - content: '{request.content[:50]}...'")
     print(f"  - deep_think: {request.deep_think}")
     try:
+        if user.preview_turn_useds >= user.max_preview_turn:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=(
+                    "You have reached the free limit. To continue using Athena, "
+                    "please clone the project from this GitHub repo and configure your own keys: "
+                    "https://github.com/abcdef54/Athena"
+                )
+            )
+
         full_chat = []
 
         print("[DEBUG /chat] Fetching conversation messages history...")
@@ -134,6 +144,17 @@ async def chat(
         )
         print(f"[DEBUG /chat] Assistant message saved successfully with ID: {assistant_message.id}")
 
+        try:
+            db_user = await crud.update_preview_turn_used(user.id, session)
+            print(f"[DEBUG /chat] User preview turns successfully updated: {db_user.preview_turn_useds}/{db_user.max_preview_turn}")
+        except UserNotFound as db_err:
+            await session.rollback()
+            print(f"[DEBUG /chat] Error incrementing turn counter database tracking states: {str(db_err)}")
+            raise HTTPException(
+                status_code=404,
+                detail=str(db_err)
+            )
+
         return ChatResponse(
             id=assistant_message.id,
             conversation_id=assistant_message.conversation_id,
@@ -143,6 +164,8 @@ async def chat(
             created_at=assistant_message.created_at
         )
 
+    except HTTPException:
+        raise
     except ConversationNotFound as e:
         print(f"[DEBUG /chat] EXCEPTION: ConversationNotFound: {str(e)}")
         raise HTTPException(
@@ -166,6 +189,16 @@ async def update_message(
     session: AsyncSession = Depends(get_async_session)
 ) -> ChatResponse:
     try:
+        if user.preview_turn_useds >= user.max_preview_turn:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=(
+                    "You have reached the free limit. To continue using Athena, "
+                    "please clone the project from this GitHub repo and configure your own keys: "
+                    "https://github.com/abcdef54/Athena"
+                )
+            )
+
         new_message = await crud.update_message(
             message_id=chat_id,
             conversation_id=new_chat.conversation_id,
@@ -174,7 +207,17 @@ async def update_message(
             session=session
         )
 
-        # RETURN THE SAVED MESSAGE SNAPSHOT, NOT A NEW CHAT EXECUTION
+        try:
+            db_user = await crud.update_preview_turn_used(user.id, session)
+            print(f"[DEBUG /chat] User preview turns successfully updated: {db_user.preview_turn_useds}/{db_user.max_preview_turn}")
+        except UserNotFound as db_err:
+            await session.rollback()
+            print(f"[DEBUG /chat] Error incrementing turn counter database tracking states: {str(db_err)}")
+            raise HTTPException(
+                status_code=404,
+                detail=str(db_err)
+            )
+
         return ChatResponse(
             id=new_message.id,
             conversation_id=new_message.conversation_id,

@@ -83,3 +83,68 @@ async def test_chat_personality(auth_client: AsyncClient, test_user: User, db_se
         # Assistant message personality should match the requested personality
         assert messages[1].role == "assistant"
         assert messages[1].personality == "coder"
+
+
+async def test_chat_free_limit(auth_client: AsyncClient, test_user: User):
+    from tests.conftest import test_session_maker
+    from src.backend.database.models import User
+    from sqlalchemy import select
+
+    # 1. Update user to start at 0 preview_turn_useds
+    async with test_session_maker() as session:
+        res = await session.execute(select(User).where(User.id == test_user.id))
+        db_user = res.scalar_one()
+        db_user.preview_turn_useds = 0
+        db_user.max_preview_turn = 3
+        await session.commit()
+
+    # Create conversation
+    async with test_session_maker() as session:
+        res = await session.execute(select(User).where(User.id == test_user.id))
+        db_user = res.scalar_one()
+        conv = await crud.create_conversation("Free Limit Thread", db_user, session)
+
+    chat_payload = {
+        "conversation_id": str(conv.id),
+        "content": "Hello",
+        "deep_think": False
+    }
+
+    # First chat should succeed and increment turn
+    response = await auth_client.post("/chat", json=chat_payload)
+    assert response.status_code == 200
+    data = response.json()
+    msg_id = data["id"]
+    
+    # Reload user and check preview_turn_useds is 1
+    async with test_session_maker() as session:
+        res = await session.execute(select(User).where(User.id == test_user.id))
+        db_user = res.scalar_one()
+        assert db_user.preview_turn_useds == 1
+
+    # 2. Exceed the free limit
+    async with test_session_maker() as session:
+        res = await session.execute(select(User).where(User.id == test_user.id))
+        db_user = res.scalar_one()
+        db_user.preview_turn_useds = 3
+        await session.commit()
+
+    # 3. Post a message, should fail with 402
+    response = await auth_client.post("/chat", json=chat_payload)
+    assert response.status_code == 402
+    data = response.json()
+    assert "You have reached the free limit" in data["detail"]
+    assert "https://github.com/abcdef54/Athena" in data["detail"]
+
+    # 4. Patch a message, should also fail with 402
+    update_payload = {
+        "conversation_id": str(conv.id),
+        "content": "Updated content",
+        "deep_think": False
+    }
+    patch_response = await auth_client.patch(f"/chat/{msg_id}", json=update_payload)
+    assert patch_response.status_code == 402
+    patch_data = patch_response.json()
+    assert "You have reached the free limit" in patch_data["detail"]
+
+
