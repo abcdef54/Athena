@@ -467,6 +467,11 @@ Version 3.2.1 delivers critical visual polish and layout fixes, resolving minor 
   - Re-themed welcome icons and primary chat button states in [chat.css](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/css/chat.css).
   - Updated loading handshakes and ingesting notification states in [app.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/app.js), [chat.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/chat.js), and [attachments.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/attachments.js).
 
+### 🛑 6. Premium Free Limit Warning & Error Handling (HTTP 402)
+- **API Error Catching**: Updated the frontend messaging pipeline in [chat.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/chat.js) to intercept `ApiError` exceptions returning an HTTP status of `402` (Payment Required / Free Limit Exceeded).
+- **Embedded Assistant Warning**: Instead of relying solely on transient, dismissible toast popups that disappear within seconds, the system dynamically appends a custom warning message inside the chat thread feed.
+- **Clickable Repository Linking**: Leverages the markdown compiler to render the detailed exception detail as structured copy with an active, clickable hyperlink so that users can instantly navigate to the GitHub repository, clone the system, and configure their own generative and vector keys.
+
 ### 📁 Files Modified
 
 | File | Change Summary |
@@ -486,3 +491,109 @@ Version 3.2.1 delivers critical visual polish and layout fixes, resolving minor 
 - **Theme Color**: Entire SPA has been completely stripped of the cyan color, unifying standard interaction colors under a single premium bright blue accent color.
 - **Popups & Cards**: Both Agent Tools, Personality dropdowns, Citation popovers, and the Splash Login card render with beautiful glass warp effects, crisp primary white labels, and high contrast against bright dynamic wallpapers.
 - **Compatibility**: Select options dispatch state updates to the backend and disable perfectly when the agent is typing.
+
+---
+
+## 🧪 Athena 3.2.2 — Backend Code Ingestion & Free Limit Test Suites
+
+Version 3.2.2 implements comprehensive test coverage for code document ingestion and free preview limit controls, fixing critical backend bugs discovered during testing.
+
+### 💻 1. Code Ingestion Tests (`tests/test_ingestion_code.py`)
+- **Language Support Verification**: Added a dedicated test suite verifying that `_extract_and_split_docs` and `ingest_docs` in `src/backend/agents/config.py` correctly load and parse programming languages. Tested languages include Python (`.py`), JavaScript (`.js`), C++ (`.cpp`), HTML (`.html`), CSS (`.css`), and plain text (`.txt`).
+- **Chunk & Metadata Parsing**: Ensures documents are correctly split by their programming language grammar, attachments IDs are mapped to chunk metadata (`source_file_id`), and chunks are safely indexed in the Chroma vector store.
+
+### 🔒 2. Free Limit Integration Tests (`tests/test_routes_chat.py`)
+- **Limits Enforcement**: Created `test_chat_free_limit` to verify that standard user turns correctly increment in the database, and that once the limit is hit (`preview_turn_useds >= max_preview_turn`), both POST `/chat` and PATCH `/chat/{chat_id}` return a clean **HTTP 402 Payment Required** status code.
+- **Message Content Verification**: Validates that the returned 402 exception detail correctly presents instructions to clone the repo and configure custom API keys (`https://github.com/abcdef54/Athena`).
+
+### 🛠️ 3. Critical Backend Bug Fixes
+- **Language.CSS AttributeError Fix**: Fixed a startup crash in `src/backend/agents/config.py` where `Language.CSS` was referenced (which does not exist in LangChain's enum list). Reconfigured `.css` files to be loaded using `TextLoader` and parsed via the standard `RecursiveCharacterTextSplitter` cleanly.
+- **Detached User Entity Persistence Fix**: Fixed a silent database update bug where `preview_turn_useds` increments were not being saved. Since the `user` object is loaded via the FastAPI Users session dependency, modifying it was detached from the main route's current request session. We refactored `routes/chat.py` to fetch a session-tracked `User` instance by ID in the current session before updating and committing.
+- **HTTPException Wrapping Fix**: Fixed an exception wrapping bug in `routes/chat.py`'s `/chat` POST handler where raised `HTTPException`s (like our 402 limit exception) were caught by the generic `except Exception as e` block and wrapped into generic `500 Internal Server Errors`. Added an explicit `except HTTPException: raise` handler to forward status codes accurately.
+
+### 📁 Files Modified
+
+| File | Change Summary |
+|------|---------------|
+| [config.py](file:///d:/Work/Code/GithubProjects/LocalMind/src/backend/agents/config.py) | Fixed `Language.CSS` `AttributeError` by mapping `.css` to `TextLoader` and standard splitters. |
+| [chat.py](file:///d:/Work/Code/GithubProjects/LocalMind/src/backend/routes/chat.py) | Fixed detached user entity persistence and added `except HTTPException: raise` wrapper handler. |
+| [test_ingestion_code.py](file:///d:/Work/Code/GithubProjects/LocalMind/tests/test_ingestion_code.py) | [NEW] Created unit tests for multilingual code parsing and ingestion. |
+| [test_routes_chat.py](file:///d:/Work/Code/GithubProjects/LocalMind/tests/test_routes_chat.py) | Added database-isolated integration tests for the HTTP 402 free preview limit check. |
+
+### ✅ Verification
+- **Test Suite Status**: All **23 tests passed** successfully (`100%` pass rate with zero failures).
+
+---
+
+## 🧪 Athena 3.2.3 — Dedicated Turn Update Helper Abstraction
+
+Version 3.2.3 encapsulates user turn increments within a secure, dedicated database transactional CRUD function, and fixes an active user logically-deleted logic constraint bug.
+
+### 🛠️ 1. CRUD Encapsulation (`src/backend/database/crud.py`)
+- **Helper function `update_preview_turn_used`**: Moved raw database updates for user turn tracking into the database layer under a dedicated abstraction, isolating database mutations securely.
+- **SQLAlchemy `update` statements**: Leverages SQLAlchemy Core's `update()` expression to atomically increment `preview_turn_useds` by `1` directly in the database without memory concurrency race conditions.
+
+### 🐛 2. Logic Fix: Active User Constraint Check
+- **Bug**: The helper initially updated user rows filtered by `User.deleted_at != None`. Because active users are not deleted, their `deleted_at` field is `None`. This caused the update to match `0` active rows, leaving active users with `0` turn counters.
+- **Fix**: Remapped the constraint logic check to filter cleanly for active users with **`User.deleted_at == None`**.
+
+### 📁 Files Modified
+
+| File | Change Summary |
+|------|---------------|
+| [exceptions.py](file:///d:/Work/Code/GithubProjects/LocalMind/src/backend/database/exceptions.py) | Added custom `UserNotFound` exception. |
+| [crud.py](file:///d:/Work/Code/GithubProjects/LocalMind/src/backend/database/crud.py) | [NEW] Programmed `update_preview_turn_used` with correct `deleted_at == None` active checking constraints. |
+| [chat.py](file:///d:/Work/Code/GithubProjects/LocalMind/src/backend/routes/chat.py) | Refactored both POST `/chat` and PATCH `/chat/{chat_id}` to utilize `crud.update_preview_turn_used`, raising clean `HTTPException(404)` on missing users. |
+
+### ✅ Verification
+- **Test Suite Status**: All **23 tests passed** seamlessly with perfect green metrics.
+
+---
+
+## 💎 Athena 3.2.4 — Lazy Generation Thread Management (Strategy A)
+
+Version 3.2.4 implements a highly requested conversational UX enhancement—the **Lazy Generation Pattern (Strategy A)**—perfectly matching the premium thread management style of ChatGPT, Claude, and Apple Intelligence.
+
+### 🧵 1. Local Chat Draft View (No Eager Inserts)
+- **UI State Reset**: When a user clicks the "New Chat" button, the client no longer immediately executes a backend `POST /conversation` request. Instead, it fires **`chat.startNewChatDraft()`**, which purely resets the UI view locally to a fresh, blank state.
+- **Visual Slate**: Sets `activeConversationId = null`, clears current thread messages, deselects any sidebar rows, and updates the Dynamic Island header cleanly to `"New Chat"`. This prevents empty, unused conversation records from cluttering the user's sidebar.
+
+### ⚡ 2. Automatic First-Prompt Ingest & Title Generation
+- **Dynamic Thread Generation**: When the user sends their very first prompt in a draft conversation, `chat.handleSend()` dynamically intercepts the state and generates the conversation in the database first, using the first 20 characters of the prompt as the conversation title.
+- **Sidebar Integration**: The sidebar list automatically unshifts the newly initialized thread dynamically and updates the active selection seamlessly before transmitting the prompt message itself.
+- **Context-Aware Uploads**: Dragging and dropping documents on the draft welcome view dynamically initializes the backend thread (named after the file) before running chunk parser ingestion.
+
+### 📁 Files Modified
+
+| File | Change Summary |
+|------|---------------|
+| [chat.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/chat.js) | Implemented `chat.startNewChatDraft()` and remapped the `#newChatBtn` click handler to put the UI in draft state cleanly. |
+
+### ✅ Verification
+- **Test Suite Status**: All **23 tests passed** successfully.
+- **Manual Operations**: verified that clicking "New Chat" multiple times no longer emits backend logs or inserts empty records, and sending the first prompt dynamically spawns the conversation seamlessly.
+
+---
+
+## 👤 Athena 3.2.5 — Human Personality Integration
+
+Version 3.2.5 integrates the brand-new **"Human" Personality** (`👤 Human`) into the conversational options list, letting users experience a deeply thoughtful, observant, and naturally conversational partner.
+
+### 🎭 1. Selector Integration
+- **HTML Option Mapping**: Added the `"human"` personality to the hidden select dropdown (as `<option value="human">👤 Human</option>`) and the custom glassmorphic dropdown trigger list inside [index.html](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/index.html).
+- **Dynamic Handshakes**: Because the premium personality engine is designed dynamically, adding the list item automatically integrates with click events, change listeners, and disabled state intercepts with no custom JS changes required.
+
+### 📁 Files Modified
+
+| File | Change Summary |
+|------|---------------|
+| [index.html](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/index.html) | Added the `👤 Human` option to both the native hidden select and premium custom glass dropdown. |
+
+### ✅ Verification
+- **Dropdown List**: Verified that `👤 Human` renders beautifully in the option list and can be clicked to seamlessly swap values.
+- **Backend Execution**: Confirmed that the new personality queries the backend successfully and triggers the thoughtful, organic system prompts.
+- **Test Suite Status**: All **23 tests passed** with zero errors or failures.
+
+
+
+
