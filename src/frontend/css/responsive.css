@@ -2,7 +2,7 @@
 
 @media (max-width: 900px) {
     .messages-container {
-        padding: 24px 5% 120px;
+        padding: 24px 5% 180px;
     }
     
     .input-container-wrapper {
@@ -72,7 +72,7 @@
 
 @media (max-width: 480px) {
     .messages-container {
-        padding: 16px 16px 100px;
+        padding: 16px 16px 180px;
     }
     
     .input-container-wrapper {

@@ -9,37 +9,63 @@
     /* We don't apply glass to the whole area, but just its components to give a sense of depth */
 }
 
-/* Header */
-.chat-header {
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    border-bottom: 1px solid var(--glass-border);
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    flex-shrink: 0;
-    z-index: 10;
+/* Dynamic Island Chat Title (Floating Glass Pill) */
+.floating-chat-title {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--glass-background);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-control);
+    backdrop-filter: blur(50px) saturate(220%);
+    -webkit-backdrop-filter: blur(50px) saturate(220%);
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    z-index: 100;
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 4px 12px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+    text-align: center;
 }
 
+/* Floating Mobile Menu Button */
 .mobile-menu-btn {
     display: none;
-    background: none;
-    border: none;
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    background: var(--glass-background);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-control);
+    backdrop-filter: blur(50px) saturate(220%);
+    -webkit-backdrop-filter: blur(50px) saturate(220%);
     color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    z-index: 1000;
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.chat-title {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--text-primary);
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: flex;
+    }
 }
 
 /* Messages Container */
 .messages-container {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 24px 10% 120px; /* bottom padding for sticky input */
+    padding: 88px 10% 180px;
+    /* high clearing margin and generous lower clearance */
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -49,9 +75,11 @@
 .messages-container::-webkit-scrollbar {
     width: 6px;
 }
+
 .messages-container::-webkit-scrollbar-track {
     background: transparent;
 }
+
 .messages-container::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 6px;
@@ -92,6 +120,7 @@
 
 .message.user {
     align-self: flex-end;
+    color: ghostwhite
 }
 
 .message.assistant {
@@ -108,19 +137,23 @@
 }
 
 .message.user .message-bubble {
-    background: rgba(41, 112, 255, 0.15);
-    backdrop-filter: blur(var(--blur-amount));
-    -webkit-backdrop-filter: blur(var(--blur-amount));
-    border: 1px solid rgba(41, 112, 255, 0.3);
+    background: rgba(24, 57, 122, 0.747);
+    backdrop-filter: blur(50px) saturate(220%);
+    -webkit-backdrop-filter: blur(50px) saturate(220%);
+    border: 1px solid var(--glass-border);
     border-bottom-right-radius: 4px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 20px 40px rgba(0, 0, 0, 0.25);
 }
 
 .message.assistant .message-bubble {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--blur-amount));
-    -webkit-backdrop-filter: blur(var(--blur-amount));
+    background: rgba(30, 32, 36, 0.822);
+    backdrop-filter: blur(50px) saturate(220%);
+    -webkit-backdrop-filter: blur(50px) saturate(220%);
     border: 1px solid var(--glass-border);
     border-bottom-left-radius: 4px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 20px 40px rgba(0, 0, 0, 0.25);
 }
 
 .message-meta {
@@ -139,20 +172,22 @@
 .message-content p {
     margin-bottom: 12px;
 }
+
 .message-content p:last-child {
     margin-bottom: 0;
 }
 
 .message-content code {
     font-family: 'Courier New', Courier, monospace;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.404);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.9em;
+
 }
 
 .message-content pre {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.555);
     padding: 16px;
     border-radius: var(--radius-md);
     overflow-x: auto;
@@ -195,13 +230,30 @@
     animation: typingPulse 1.4s infinite ease-in-out;
 }
 
-.typing-dot:nth-child(1) { animation-delay: 0s; }
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+.typing-dot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
 
 @keyframes typingPulse {
-    0%, 100% { transform: scale(0.6); opacity: 0.4; }
-    50% { transform: scale(1); opacity: 1; }
+
+    0%,
+    100% {
+        transform: scale(0.6);
+        opacity: 0.4;
+    }
+
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /* Input Area */
@@ -220,7 +272,7 @@
     align-items: flex-end;
     gap: 12px;
     padding: 12px 16px;
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-control);
     transition: border-color 0.3s;
 }
 

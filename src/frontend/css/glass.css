@@ -1,41 +1,61 @@
 /* Design Tokens & Glass Utilities */
 :root {
-    /* Colors */
-    --bg-dark: #0f0f11;
-    --glass-bg: rgba(30, 30, 34, 0.65);
-    --glass-bg-hover: rgba(45, 45, 50, 0.7);
-    --glass-bg-active: rgba(60, 60, 65, 0.75);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-border-highlight: rgba(255, 255, 255, 0.15);
-    
-    --text-primary: rgba(255, 255, 255, 0.95);
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --text-tertiary: rgba(255, 255, 255, 0.4);
-    
-    --accent-blue: #2970ff;
-    --accent-blue-hover: #1e5de6;
+    /* Liquid Glass Engine Core Specs (Optimized for High-Contrast Wallpapers) */
+    --glass-background: rgba(91, 92, 94, 0.208);
+    /* Deep, highly transparent shielding */
+    --glass-border: rgba(255, 255, 255, 0.12);
+    /* Razor-sharp translucent white panel bounds */
+    --glass-edge-highlight: rgba(255, 255, 255, 0.22);
+    /* Inset rim-light simulation */
+
+    /* System Interaction Elements */
+    --accent-primary: #00a2ff;
+    /* Vivid Apple Cyan */
+    --accent-purple: #a855f7;
+    /* Deep neon purple */
     --accent-cyan: #00d2ff;
-    
-    /* Effects */
-    --blur-amount: 24px;
-    --shadow-soft: 0 4px 24px -4px rgba(0, 0, 0, 0.3);
-    --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    
-    /* Layout */
+    /* Keeping existing cyan for backward compatibility */
+    --accent-blue: #2970ff;
+    /* Keeping existing blue for backward compatibility */
+    --accent-blue-hover: #1e5de6;
+
+    /* Typography Palette (Anti-washed out constraints) */
+    --text-primary: #ffffff;
+    /* High-contrast crisp primary copy */
+    --text-secondary: rgba(255, 255, 255, 0.801);
+    /* Soft text layer */
+    --text-tertiary: rgba(255, 255, 255, 0.897);
+    /* Subtle text */
+
+    /* Surface Radii */
+    --radius-panel: 28px;
+    /* Premium continuous curvature curves for major cards */
+    --radius-control: 16px;
+    /* Smooth pill fields for action elements */
+
+    /* Layout Variables */
+    --sidebar-width: 280px;
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 18px;
-    --radius-xl: 24px;
-    --sidebar-width: 280px;
+    --radius-xl: var(--radius-panel);
+    /* Alias for backward compatibility */
 }
 
-/* Base Glass Effect */
+/* Liquid Glass Card Layout Template */
 .glass-panel {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--blur-amount)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(180%);
+    background: var(--glass-background);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-soft);
+    border-radius: var(--radius-panel);
+    backdrop-filter: blur(50px) saturate(220%);
+    -webkit-backdrop-filter: blur(50px) saturate(220%);
+
+    /* Refractive Rim Lighting: The top light catch is built via an inset shadow */
+    box-shadow:
+        inset 0 1px 0 0 var(--glass-edge-highlight),
+        0 20px 40px rgba(0, 0, 0, 0.25);
+
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 /* Glass Button */
@@ -109,36 +129,110 @@
     flex-shrink: 0;
 }
 
-.personality-select {
-    background: rgba(255, 255, 255, 0.05);
+/* Personality Selector styling (both for native fallback and custom trigger) */
+.personality-select,
+.personality-dropdown-trigger {
+    background: rgba(15, 22, 36, 0.65);
     border: 1px solid var(--glass-border);
     color: var(--text-primary);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
+    border-radius: var(--radius-control);
+    padding: 6px 14px;
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     outline: none;
-    max-width: 120px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    backdrop-filter: blur(80px) saturate(200%);
+    -webkit-backdrop-filter: blur(80px) saturate(200%);
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 10px 20px rgba(0, 0, 0, 0.3);
+    font-family: inherit;
 }
 
-.personality-select:hover {
-    background: rgba(255, 255, 255, 0.1);
+.personality-select:hover,
+.personality-dropdown-trigger:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.1) !important;
     border-color: var(--glass-border-highlight);
 }
 
-.personality-select:focus {
+.personality-select:focus,
+.personality-dropdown-trigger:focus:not(.disabled) {
     border-color: var(--accent-cyan);
-    box-shadow: 0 0 8px rgba(0, 210, 255, 0.2);
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 0 8px rgba(0, 210, 255, 0.2);
 }
 
+/* Custom dropdown structures */
+.personality-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.personality-dropdown-trigger.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.personality-dropdown-trigger .chevron-icon {
+    transition: transform 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.personality-dropdown.open .personality-dropdown-trigger .chevron-icon {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Menu & Native Options fallback */
+.personality-dropdown-menu,
 .personality-select option {
-    background: #18181b;
+    background: rgba(15, 22, 36, 0.788);
     color: var(--text-primary);
-    padding: 8px;
+    backdrop-filter: blur(80px) saturate(200%);
+    -webkit-backdrop-filter: blur(80px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-control);
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.personality-dropdown-menu {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    min-width: 140px;
+    z-index: 600;
+    padding: 6px 0;
+    overflow: hidden;
+    animation: toolsSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.personality-dropdown-menu.hidden {
+    display: none;
+}
+
+.personality-dropdown-item {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+/* Micro-glass interaction hover state */
+.personality-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-primary) !important;
+}
+
+.personality-dropdown-item.active {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: var(--accent-cyan) !important;
+    font-weight: 600;
 }
 
 /* Sidebar Hover Action Group */
@@ -170,6 +264,12 @@
     backdrop-filter: blur(8px);
     border: 1px solid var(--glass-border);
     z-index: 10;
+}
+
+.conversation-item:hover,
+.active-conversation-link {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-primary) !important;
 }
 
 .conversation-item:hover .conv-actions {
@@ -553,4 +653,157 @@
 
 .table-wrapper::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================
+   Athena 3.1.1 — Agent Tools Popup Menu
+   ========================================== */
+
+.tools-menu-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.tools-menu-btn {
+    transition: all 0.25s ease;
+}
+
+.tools-menu-btn:hover {
+    color: var(--accent-cyan) !important;
+}
+
+/* Popup Panel */
+.tools-popup,
+.agent-tools-dropdown {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 0;
+    min-width: 240px;
+    background: rgba(15, 22, 36, 0.788);
+    backdrop-filter: blur(180px) saturate(180%);
+    -webkit-backdrop-filter: blur(180px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 20px 40px rgba(0, 0, 0, 0.25);
+    z-index: 500;
+    overflow: hidden;
+    animation: toolsSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    color: var(--text-primary);
+}
+
+.tools-popup.hidden {
+    display: none;
+}
+
+@keyframes toolsSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tools-popup-header {
+    padding: 10px 16px;
+    font-size: 0.75rem;
+    font-weight: 1000;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--glass-border);
+    font-family: 'Inter', sans-serif;
+}
+
+/* Tool List */
+.tools-list {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+}
+
+.tools-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 2px solid transparent;
+}
+
+.tools-list-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-left-color: var(--accent-cyan);
+}
+
+.tool-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+}
+
+.tool-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.tool-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: color 0.2s ease;
+}
+
+.tools-list-item:hover .tool-name {
+    color: var(--accent-cyan);
+}
+
+.tool-desc {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tools-list-item:hover .tool-desc {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ==========================================
+   Athena 3.2 — Liquid Glass Wallpaper Toggle
+   ========================================== */
+
+.wallpaper-toggle-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--glass-background);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    box-shadow: inset 0 1px 0 0 var(--glass-edge-highlight), 0 4px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.wallpaper-toggle-btn:hover {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.1);
 }
