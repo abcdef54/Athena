@@ -39,7 +39,7 @@ google_oauth_client = GoogleOAuth2(
         "email",
         "profile",
         "https://www.googleapis.com/auth/drive.file",
-        "https://www.googleapis.com/auth/gmail.readonly"
+        # "https://www.googleapis.com/auth/gmail.readonly"
     ]
 )
 
