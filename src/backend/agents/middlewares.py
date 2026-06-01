@@ -68,25 +68,127 @@ async def re_evaluate_answer(state: dict, runtime: Any) -> Optional[dict]:
             break
 
     critique_prompt = f"""
-    You are the deep-reasoning verification layer for Athena, a world-class analytical assistant.
-    Review the initial draft answer generated for the user's prompt. 
-    Analyze it for flaws, missing code block documentation, structure clarity, and completeness.
+    You are Athena's Deep Reasoning and Quality Assurance Layer.
 
-    CRITERIA FOR REVISION:
-    - If the answer is completely accurate, concise, and beautifully structured, do not add filler; return it exactly as-is.
-    - If you find incomplete code logic, ambiguous formatting, or subtle errors, completely rewrite it to match production quality.
-    - Ensure markdown layouts, headers, and code snippets are cleanly preserved.
+    Your job is NOT to automatically rewrite answers.
 
-    USER ORIGINAL PROMPT:
+    Your job is to determine whether the answer genuinely needs improvement.
+
+    ==================================================
+    USER REQUEST
+    ==================================================
+
     {user_prompt}
 
-    INITIAL GENERATED DRAFT ANSWER:
-    ---
-    {msg_content}
-    ---
+    ==================================================
+    INITIAL DRAFT ANSWER
+    ==================================================
 
-    Provide the final optimized and validated response below without any meta-commentary:
-    """ 
+    {msg_content}
+
+    ==================================================
+    REVIEW PROCESS
+    ==================================================
+
+    Perform a rigorous review.
+
+    1. REQUIREMENT ALIGNMENT
+
+    Ask:
+
+    - Did the answer actually address the user's request?
+    - Did it solve the requested problem?
+    - Did it answer the correct question?
+    - Is anything important missing?
+
+    2. FACTUAL ACCURACY
+
+    Look for:
+
+    - Incorrect claims
+    - Contradictions
+    - Unsupported statements
+    - Hallucinated information
+    - Fabricated citations
+    - Invented APIs
+    - Invented framework behavior
+    - Invented documentation references
+
+    3. LOGICAL CONSISTENCY
+
+    Check:
+
+    - Internal contradictions
+    - Invalid reasoning
+    - Broken assumptions
+    - Missing reasoning steps
+
+    4. TECHNICAL REVIEW
+
+    If the answer contains code:
+
+    Check:
+
+    - Syntax correctness
+    - Missing imports
+    - Runtime errors
+    - Edge cases
+    - Security issues
+    - Scalability concerns
+    - Best-practice violations
+
+    Do not invent issues that do not exist.
+
+    5. COMMUNICATION QUALITY
+
+    Check:
+
+    - Clarity
+    - Structure
+    - Conciseness
+    - Readability
+
+    Do not make answers longer unless doing so genuinely improves quality.
+
+    6. COMPLETENESS
+
+    Ask:
+
+    - What critical information is missing?
+    - What follow-up questions would a knowledgeable expert ask?
+    - Would the user likely need additional clarification?
+
+    ==================================================
+    DECISION
+    ==================================================
+
+    If the answer is already excellent:
+
+    Return it EXACTLY unchanged.
+
+    If improvements are required:
+
+    Rewrite the entire answer.
+
+    Requirements:
+
+    - Preserve correctness.
+    - Improve accuracy.
+    - Improve clarity.
+    - Improve completeness.
+    - Improve reasoning.
+    - Preserve markdown formatting.
+    - Preserve code blocks.
+
+    Never include:
+
+    - Review notes
+    - Criticism
+    - Meta-commentary
+    - Explanations of your reasoning
+
+    Return ONLY the final answer.
+    """
 
     try:
         refined_response = await llm.ainvoke([HumanMessage(content=critique_prompt)]) 
