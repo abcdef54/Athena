@@ -177,13 +177,13 @@ export const chat = {
     },
 
     // Trigger creating a new chat from button
-    createNewChat: async (optionalTitle = 'New Chat') => {
+    createNewChat: async (optionalTitle = 'New Chat', preserveDrawer = false) => {
         try {
             if (!auth.user) return;
             const newConv = await api.createConversation(auth.user.id, optionalTitle);
             chat.conversations.unshift(newConv);
             chat.renderConversationsList();
-            await chat.selectConversation(newConv.id);
+            await chat.selectConversation(newConv.id, preserveDrawer);
             return newConv;
         } catch (error) {
             ui.showToast('Failed to create new conversation');
@@ -192,7 +192,7 @@ export const chat = {
     },
 
     // Select and activate conversation
-    selectConversation: async (id) => {
+    selectConversation: async (id, preserveDrawer = false) => {
         chat.activeConversationId = id;
         localStorage.setItem('activeConversationId', id);
 
@@ -209,7 +209,9 @@ export const chat = {
         }
 
         // Hide File Drawer if open
-        ui.closeDrawer();
+        if (!preserveDrawer) {
+            ui.closeDrawer();
+        }
 
         // Load message history & attachments list
         await chat.loadMessages(id);

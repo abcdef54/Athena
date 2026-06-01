@@ -16,10 +16,13 @@ export const attachments = {
         const btnGoogle = document.getElementById('providerBtnGoogle');
         const btnLocal = document.getElementById('providerBtnLocal');
 
-        if (browseLink) {
-            browseLink.addEventListener('click', (e) => {
-                e.stopPropagation();
-                fileInput.click();
+        if (dropZone) {
+            dropZone.addEventListener('click', (e) => {
+                const browseLink = e.target.closest('#browseFilesLink');
+                if (browseLink) {
+                    e.stopPropagation();
+                    fileInput.click();
+                }
             });
         }
 
@@ -123,6 +126,7 @@ export const attachments = {
             if (file.file_type.includes('pdf')) fileIcon = '📕';
             else if (file.file_type.includes('word') || file.file_name.endsWith('.docx')) fileIcon = '📘';
             else if (file.file_type.includes('markdown') || file.file_name.endsWith('.md')) fileIcon = '📝';
+            else if (/\.(py|js|ts|c|cpp|html|css)$/i.test(file.file_name)) fileIcon = '💻';
 
             item.innerHTML = `
                 <div style="font-size: 1.3rem;">${fileIcon}</div>
@@ -167,7 +171,7 @@ export const attachments = {
                 // If in welcome state, create conversation thread dynamically
                 if (!chat.activeConversationId) {
                     const threadTitle = file.name.substring(0, 15) + " context";
-                    const newThread = await chat.createNewChat(threadTitle);
+                    const newThread = await chat.createNewChat(threadTitle, true);
                     if (!newThread) throw new Error("Could not initialize thread for upload");
                 }
 
