@@ -2,6 +2,12 @@
 
 Athena is a high-performance conversational intelligence platform. The system integrates an asynchronous **FastAPI** backend driven by LangChain and LangGraph cognitive workflows, a highly secure multi-tenant session manager, and an isolated **Chroma Vector DB** retrieval-augmented generation (RAG) indexing pipeline. The frontend is built as a lightweight, responsive ES6 single-page application utilizing fluid glass panels with blur effects and dynamic wallpaper options.
 
+## 📺 Application Demo
+
+<a href="https://github.com/user-attachments/assets/cb7cbb49-3660-4212-8465-575974ce86c8" target="_blank">
+  <img src="src/frontend/images/Rock formation on body of water-large.jpg" alt="Watch Athena Demo" width="100%" style="border-radius: 8px; box-shadow: 0 4px 30px rgba(0,0,0,0.1);"/>
+</a>
+
 > [!IMPORTANT]
 > The Athena project is now complete. This is the final stable version (v3.2.6), and no further updates or active development are planned.
 
