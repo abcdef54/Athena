@@ -4,9 +4,7 @@ Athena is a high-performance conversational intelligence platform. The system in
 
 ## 📺 Application Demo
 
-<a href="https://github.com/user-attachments/assets/cb7cbb49-3660-4212-8465-575974ce86c8" target="_blank">
-  <img src="src/frontend/images/Rock formation on body of water-large.jpg" alt="Watch Athena Demo" width="100%" style="border-radius: 8px; box-shadow: 0 4px 30px rgba(0,0,0,0.1);"/>
-</a>
+[![Demo Video](https://img.shields.io/badge/▶_Watch_Demo_Video-Click_Here-blue?style=for-the-badge&logo=youtube)](https://github.com/user-attachments/assets/cb7cbb49-3660-4212-8465-575974ce86c8)
 
 > [!IMPORTANT]
 > The Athena project is now complete. This is the final stable version (v3.2.6), and no further updates or active development are planned.
