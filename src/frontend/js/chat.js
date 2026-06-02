@@ -414,7 +414,7 @@ export const chat = {
     },
 
     // Control chat inputs during networking
-    setWaitingState: (waiting) => {
+    setWaitingState: (waiting, showIndicator = true) => {
         chat.isWaiting = waiting;
         const input = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -426,7 +426,9 @@ export const chat = {
             deepThinkToggle.disabled = true;
             const personalitySelect = document.getElementById('personalitySelect');
             if (personalitySelect) personalitySelect.disabled = true;
-            chat.showTypingIndicator();
+            if (showIndicator) {
+                chat.showTypingIndicator();
+            }
         } else {
             input.disabled = false;
             deepThinkToggle.disabled = false;
@@ -445,12 +447,12 @@ export const chat = {
         const content = input.value.trim();
         if (!content || chat.isWaiting) return;
 
-        chat.setWaitingState(true);
+        chat.setWaitingState(true, false);
 
         try {
             if (!chat.activeConversationId) {
                 const initialTitle = content.length > 20 ? content.substring(0, 20) + "..." : content;
-                const newConv = await chat.createNewChat(initialTitle);
+                const newConv = await chat.createNewChat(initialTitle, true);
                 if (!newConv) throw new Error("Could not initialize thread");
             }
 
@@ -465,6 +467,9 @@ export const chat = {
                 created_at: new Date().toISOString()
             };
             await chat.appendMessage(userMsg);
+
+            // Show typing indicator below the newly appended user message
+            chat.showTypingIndicator();
 
             const responseMsg = await api.sendChatMessage(activeId, content, chat.deepThink, chat.personality);
 
