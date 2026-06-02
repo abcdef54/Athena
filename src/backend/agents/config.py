@@ -46,7 +46,7 @@ CODE_LANGUAGES = {
 
 def _get_user_vector_store(user_id: str) -> Chroma:
     user_db_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), f'../../../uploads/chroma/{user_id}')
+        os.path.join(os.path.dirname(__file__), f'../../../.uploads/chroma/{user_id}')
     )
     os.makedirs(user_db_path, exist_ok=True)
     return Chroma(

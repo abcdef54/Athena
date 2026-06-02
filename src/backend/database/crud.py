@@ -368,7 +368,7 @@ async def create_attachment(
         print(f"[DEBUG create_attachment] ERROR: User {user.id} is not the owner of conversation {conversation_id}.")
         raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
 
-    uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../uploads/'))
+    uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../.uploads/'))
     os.makedirs(uploads_dir, exist_ok=True)
     print(f"[DEBUG create_attachment] Uploads target folder: {uploads_dir}")
 

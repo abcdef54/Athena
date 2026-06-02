@@ -158,15 +158,30 @@ export const attachments = {
         if (attachments.isUploading) return;
         attachments.isUploading = true;
 
-        // Synchronously convert FileList to standard Array to prevent native GC/invalidation during awaits
-        const filesArray = Array.from(filesList);
-
         const defaultView = document.getElementById('dropZoneDefaultView');
         const loadingView = document.getElementById('dropZoneLoadingView');
 
         if (defaultView && loadingView) {
             defaultView.classList.add('hidden');
             loadingView.classList.remove('hidden');
+        }
+
+        // Synchronously convert and cache all files into memory immediately to prevent browser invalidation of file handles during awaits
+        const filesArray = [];
+        try {
+            const cached = await Promise.all(
+                Array.from(filesList).map(async (file) => {
+                    const buffer = await file.arrayBuffer();
+                    return new File([buffer], file.name, {
+                        type: file.type || 'application/octet-stream',
+                        lastModified: file.lastModified
+                    });
+                })
+            );
+            filesArray.push(...cached);
+        } catch (err) {
+            console.error("Warning: drag-drop pre-caching failed, using raw FileList:", err);
+            filesArray.push(...Array.from(filesList));
         }
 
         try {
@@ -183,10 +198,9 @@ export const attachments = {
                 // Trigger file post
                 const data = await api.uploadFile(activeId, file, attachments.activeProvider);
                 attachments.conversationFiles.unshift(data);
+                attachments.renderFileList(); // Update list progressively after each file is uploaded
                 ui.showToast(`Ingested ${file.name} successfully`, 'success');
             }
-
-            attachments.renderFileList();
 
             // Reload message history in active thread since ingestion changes citation lookups
             if (chat.activeConversationId) {
@@ -207,6 +221,9 @@ export const attachments = {
             }
             const input = document.getElementById('fileInput');
             if (input) input.value = ''; // Reset input
+            
+            // Ensure the list is rendered at the end of the operation as a final fallback
+            attachments.renderFileList();
         }
     },
 

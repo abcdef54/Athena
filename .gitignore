@@ -78,6 +78,9 @@ chromadb/
 **/chroma_db/
 **/chroma/
 **/uploads/
+.uploads/
+**/.uploads/
+
 
 # --- Celery ---
 celerybeat-schedule
