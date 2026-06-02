@@ -3,7 +3,7 @@
 Athena is a high-performance conversational intelligence platform. The system integrates an asynchronous **FastAPI** backend driven by LangChain and LangGraph cognitive workflows, a highly secure multi-tenant session manager, and an isolated **Chroma Vector DB** retrieval-augmented generation (RAG) indexing pipeline. The frontend is built as a lightweight, responsive ES6 single-page application utilizing fluid glass panels with blur effects and dynamic wallpaper options.
 
 > [!IMPORTANT]
-> The Athena project is now complete. This is the final stable version (v3.2.5), and no further updates or active development are planned.
+> The Athena project is now complete. This is the final stable version (v3.2.6), and no further updates or active development are planned.
 
 ---
 
@@ -37,7 +37,8 @@ Athena has evolved through key development stages to reach its final production-
 *   **Athena v3.0 (Rich Formatting)**: Rich educational rendering including KaTeX LaTeX mathematical notations, Highlight.js code editors, and Copy-to-Clipboard glass overlays.
 *   **Athena v3.1 & v3.1.1 (Tables & Tools Showcase)**: Added pipe-delimited grid-table support with scroll controls, and an Agent Tools drawer displaying modular workflows.
 *   **Athena v3.2 & v3.2.1 (Refinement & Standardizations)**: Transitioned UI to a lightweight glass design with dynamic wallpapers.
-*   **Athena v3.2.5 (Lazy Threads, Code RAG & Personalities) [LATEST]**: Introduced lazy conversation generation (thread database allocation on first prompt), raw code file ingestion (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`) to the RAG pipeline, a standalone local `👤 Human` conversational personality, and user free usage limit enforcement.
+*   **Athena v3.2.5 (Lazy Threads, Code RAG & Personalities)**: Introduced lazy conversation generation (thread database allocation on first prompt), raw code file ingestion (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`) to the RAG pipeline, a standalone local `👤 Human` conversational personality, and user free usage limit enforcement.
+*   **Athena v3.2.6 (Multi-File Ingest & Watcher fixes) [LATEST]**: Added synchronous file buffer caching to prevent transient DataTransfer handle invalidations on drag-and-drop, isolated local file storage and Chroma database vectors into a hidden project-root `.uploads/` directory to prevent editor live-reload restarts, and installed missing `docx2txt` / `python-docx` parsing requirements in the python execution environment.
 
 ---
 

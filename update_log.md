@@ -594,6 +594,43 @@ Version 3.2.5 integrates the brand-new **"Human" Personality** (`👤 Human`) in
 - **Backend Execution**: Confirmed that the new personality queries the backend successfully and triggers the thoughtful, organic system prompts.
 - **Test Suite Status**: All **23 tests passed** with zero errors or failures.
 
+---
+
+## 🛠️ Athena 3.2.6 — Multi-File upload, Live Reload Prevention & Docx ingestion Fixes
+
+Version 3.2.6 resolves critical file ingestion bugs, including multi-file drag-and-drop lifecycle cleanup, preventing live-server screen flashes, and resolving missing docx parser packages in the python virtual environment.
+
+### 📦 1. Hidden Workspace Storage (No-Reloads)
+- **Ignored Directory Prefixing**: Relocated all physical file uploads and Chroma database indexes to `.uploads/` inside the project root directory. Since directories starting with a `.` are hidden, standard editor file watchers (e.g. VS Code Live Preview, Live Server) completely ignore updates inside them.
+- **Uvicorn Reloader Constrainment**: Configured `main.py`'s uvicorn reloader to watch *only* `src/backend` (`reload_dirs=["src/backend"]`).
+- **Result**: Document uploads no longer trigger unexpected browser screen-flashes or server restarts, preserving client state completely during ingestion.
+
+### 📁 2. Transient File Handle Caching & Progressive Rendering
+- **In-Memory File Pre-Caching**: Upgraded `handleFilesSelected()` in [attachments.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/attachments.js) to read all dropped files synchronously into standard `ArrayBuffer` blocks concurrently *before* yielding to the microtask loop. This prevents the browser from garbage-collecting or invalidating the transient file handles inside the `dataTransfer` object during long-running async calls.
+- **Progressive Update Hooks**: Modified the uploader loop to trigger `renderFileList()` progressively as each file completes uploading, instead of waiting for the entire batch to finish. This ensures the file list updates instantly.
+- **Persistent Ingestion Drawer**: Resolved the issue where the ingestion drawer closed automatically during dynamic welcome-screen conversation spawning by introducing a `preserveDrawer` flag.
+
+### 📑 3. Docx Loader Dependency Resolution
+- **Environment Updates**: Installed `docx2txt` and `python-docx` inside the server's Python virtual environment (`.venv`), resolving the silent `ModuleNotFoundError` during docx file parsing.
+- **Automated Ingestion Test**: Added `test_extract_and_split_docs_docx` in [test_ingestion_code.py](file:///d:/Work/Code/GithubProjects/LocalMind/tests/test_ingestion_code.py) to assert full text-chunk extraction of `.docx` files.
+
+### 📁 Files Modified
+
+| File | Change Summary |
+|------|---------------|
+| [main.py](file:///d:/Work/Code/GithubProjects/LocalMind/main.py) | Constrained uvicorn reloader directories. |
+| [config.py](file:///d:/Work/Code/GithubProjects/LocalMind/src/backend/agents/config.py) | Pointed Chroma DB path to project root `.uploads/`. |
+| [crud.py](file:///d:/Work/Code/GithubProjects/LocalMind/src/backend/database/crud.py) | Pointed local files path to project root `.uploads/`. |
+| [attachments.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/attachments.js) | Implemented synchronous in-memory caching, progressive list updates, and event delegation. |
+| [chat.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/chat.js) | Integrated `preserveDrawer` option in conversation selection. |
+| [.gitignore](file:///d:/Work/Code/GithubProjects/LocalMind/.gitignore) | Ignored the new `.uploads/` directory. |
+| [test_ingestion_code.py](file:///d:/Work/Code/GithubProjects/LocalMind/tests/test_ingestion_code.py) | Added automated unit tests for docx file ingestion. |
+
+### ✅ Verification
+- **Test Suite Status**: All **24 tests passed** successfully.
+- **Manual Operations**: verified multi-file drag-and-drop works flawlessly, document drawer remains stable with zero refreshes or flashes, and docx content is fully readable by the model.
+
+
 
 
 
