@@ -92,7 +92,7 @@ class Attachment(Base):
     # Local mode: contains full string path (e.g., "../../uploads/xyz.pdf")
     # Google Drive mode: contains Google Drive File ID (e.g., "1pzschX3uMbxU...")
     file_path = Column(String(512), nullable=False)
-    file_type = Column(String(50), nullable=False)
+    file_type = Column(String(255), nullable=False)
     file_size = Column(Integer, nullable=False)
     extracted_text = Column(Text, nullable=True)
     storage_provider = Column(Enum(StorageProvider), default=StorageProvider.LOCAL, nullable=False)
