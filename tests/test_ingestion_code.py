@@ -71,3 +71,16 @@ async def test_ingest_docs_with_mock_vector_store(tmp_path):
     for chunk in chunks:
         assert chunk.metadata["source_file_id"] == "mock-attachment-id"
         assert "test_ingest" in chunk.page_content
+
+async def test_extract_and_split_docs_docx(tmp_path):
+    import docx
+    docx_path = tmp_path / "test_doc.docx"
+    doc = docx.Document()
+    doc.add_paragraph("This is a sample docx text content for ingestion testing.")
+    doc.save(str(docx_path))
+    
+    chunks = _extract_and_split_docs(str(docx_path), "docx", chunk_size=100, chunk_overlap=10)
+    assert len(chunks) > 0
+    combined_content = "".join([c.page_content for c in chunks])
+    assert "docx text content" in combined_content
+
