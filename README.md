@@ -26,9 +26,6 @@ The purpose of this project was to solve the critical "missing runway" that real
 
 [![Demo Video](https://img.shields.io/badge/▶_Watch_Demo_Video-Click_Here-blue?style=for-the-badge&logo=youtube)](https://github.com/user-attachments/assets/cb7cbb49-3660-4212-8465-575974ce86c8)
 
-> [!IMPORTANT]
-> The Athena project is now complete. This is the final stable version (v3.2.6), and no further updates or active development are planned.
-
 ---
 
 ## 🌟 Core Features
@@ -86,8 +83,11 @@ Athena has evolved through key development stages to reach its final production-
 *   **Athena v3.0 (Rich Formatting)**: Rich educational rendering including KaTeX LaTeX mathematical notations, Highlight.js code editors, and Copy-to-Clipboard glass overlays.
 *   **Athena v3.1 & v3.1.1 (Tables & Tools Showcase)**: Added pipe-delimited grid-table support with scroll controls, and an Agent Tools drawer displaying modular workflows.
 *   **Athena v3.2 & v3.2.1 (Refinement & Standardizations)**: Transitioned UI to a lightweight glass design with dynamic wallpapers.
-*   **Athena v3.2.5 (Lazy Threads, Code RAG & Personalities)**: Introduced lazy conversation generation (thread database allocation on first prompt), raw code file ingestion (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`) to the RAG pipeline, a standalone local `👤 Human` conversational personality, and user free usage limit enforcement.
-*   **Athena v3.2.6 (Multi-File Ingest & Watcher fixes) [LATEST]**: Added synchronous file buffer caching to prevent transient DataTransfer handle invalidations on drag-and-drop, isolated local file storage and Chroma database vectors into a hidden project-root `.uploads/` directory to prevent editor live-reload restarts, and installed missing `docx2txt` / `python-docx` parsing requirements in the python execution environment.
+*   **Athena v3.3 & v3.3.1 (Code RAG & Usage Limits)**: Integrated raw code file parsing into the RAG pipeline, established database usage limits, and abstracted turn update helpers.
+*   **Athena v3.4 (Lazy Thread Generation)**: Introduced lazy conversation generation where thread database allocation occurs only upon the first user prompt or upload.
+*   **Athena v3.5 (Human Personality)**: Integrated the standalone local `👤 Human` conversational personality option.
+*   **Athena v3.6 (Multi-File Ingest & Watcher Fixes)**: Resolved drag-and-drop file handle invalidation with synchronous buffer caching, moved local uploads to a hidden `.uploads/` directory to prevent live-reload refreshes, and integrated `.docx` parsing requirements.
+*   **Athena v3.7 (Deep-Think Config & Execution Fixes) [LATEST]**: Fixed Deep-Think middleware configuration propagation by subclassing `AgentMiddleware` with type-annotated parameters, and implemented type-safe message getters to prevent `AttributeError` during intermediate tool execution.
 
 ---
 

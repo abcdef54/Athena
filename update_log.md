@@ -494,9 +494,9 @@ Version 3.2.1 delivers critical visual polish and layout fixes, resolving minor 
 
 ---
 
-## 🧪 Athena 3.2.2 — Backend Code Ingestion & Free Limit Test Suites
+## 🧪 Athena 3.3 — Backend Code Ingestion & Free Limit Test Suites
 
-Version 3.2.2 implements comprehensive test coverage for code document ingestion and free preview limit controls, fixing critical backend bugs discovered during testing.
+Version 3.3 implements comprehensive test coverage for code document ingestion and free preview limit controls, fixing critical backend bugs discovered during testing.
 
 ### 💻 1. Code Ingestion Tests (`tests/test_ingestion_code.py`)
 - **Language Support Verification**: Added a dedicated test suite verifying that `_extract_and_split_docs` and `ingest_docs` in `src/backend/agents/config.py` correctly load and parse programming languages. Tested languages include Python (`.py`), JavaScript (`.js`), C++ (`.cpp`), HTML (`.html`), CSS (`.css`), and plain text (`.txt`).
@@ -525,9 +525,9 @@ Version 3.2.2 implements comprehensive test coverage for code document ingestion
 
 ---
 
-## 🧪 Athena 3.2.3 — Dedicated Turn Update Helper Abstraction
+## 🧪 Athena 3.3.1 — Dedicated Turn Update Helper Abstraction
 
-Version 3.2.3 encapsulates user turn increments within a secure, dedicated database transactional CRUD function, and fixes an active user logically-deleted logic constraint bug.
+Version 3.3.1 encapsulates user turn increments within a secure, dedicated database transactional CRUD function, and fixes an active user logically-deleted logic constraint bug.
 
 ### 🛠️ 1. CRUD Encapsulation (`src/backend/database/crud.py`)
 - **Helper function `update_preview_turn_used`**: Moved raw database updates for user turn tracking into the database layer under a dedicated abstraction, isolating database mutations securely.
@@ -550,9 +550,9 @@ Version 3.2.3 encapsulates user turn increments within a secure, dedicated datab
 
 ---
 
-## 💎 Athena 3.2.4 — Lazy Generation Thread Management (Strategy A)
+## 💎 Athena 3.4 — Lazy Generation Thread Management (Strategy A)
 
-Version 3.2.4 implements a highly requested conversational UX enhancement—the **Lazy Generation Pattern (Strategy A)**—perfectly matching the premium thread management style of ChatGPT, Claude, and Apple Intelligence.
+Version 3.4 implements a highly requested conversational UX enhancement—the **Lazy Generation Pattern (Strategy A)**—perfectly matching the premium thread management style of ChatGPT, Claude, and Apple Intelligence.
 
 ### 🧵 1. Local Chat Draft View (No Eager Inserts)
 - **UI State Reset**: When a user clicks the "New Chat" button, the client no longer immediately executes a backend `POST /conversation` request. Instead, it fires **`chat.startNewChatDraft()`**, which purely resets the UI view locally to a fresh, blank state.
@@ -575,9 +575,9 @@ Version 3.2.4 implements a highly requested conversational UX enhancement—the 
 
 ---
 
-## 👤 Athena 3.2.5 — Human Personality Integration
+## 👤 Athena 3.5 — Human Personality Integration
 
-Version 3.2.5 integrates the brand-new **"Human" Personality** (`👤 Human`) into the conversational options list, letting users experience a deeply thoughtful, observant, and naturally conversational partner.
+Version 3.5 integrates the brand-new **"Human" Personality** (`👤 Human`) into the conversational options list, letting users experience a deeply thoughtful, observant, and naturally conversational partner.
 
 ### 🎭 1. Selector Integration
 - **HTML Option Mapping**: Added the `"human"` personality to the hidden select dropdown (as `<option value="human">👤 Human</option>`) and the custom glassmorphic dropdown trigger list inside [index.html](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/index.html).
@@ -596,9 +596,9 @@ Version 3.2.5 integrates the brand-new **"Human" Personality** (`👤 Human`) in
 
 ---
 
-## 🛠️ Athena 3.2.6 — Multi-File upload, Live Reload Prevention & Docx ingestion Fixes
+## 🛠️ Athena 3.6 — Multi-File upload, Live Reload Prevention & Docx ingestion Fixes
 
-Version 3.2.6 resolves critical file ingestion bugs, including multi-file drag-and-drop lifecycle cleanup, preventing live-server screen flashes, and resolving missing docx parser packages in the python virtual environment.
+Version 3.6 resolves critical file ingestion bugs, including multi-file drag-and-drop lifecycle cleanup, preventing live-server screen flashes, and resolving missing docx parser packages in the python virtual environment.
 
 ### 📦 1. Hidden Workspace Storage (No-Reloads)
 - **Ignored Directory Prefixing**: Relocated all physical file uploads and Chroma database indexes to `.uploads/` inside the project root directory. Since directories starting with a `.` are hidden, standard editor file watchers (e.g. VS Code Live Preview, Live Server) completely ignore updates inside them.
@@ -629,6 +629,31 @@ Version 3.2.6 resolves critical file ingestion bugs, including multi-file drag-a
 ### ✅ Verification
 - **Test Suite Status**: All **24 tests passed** successfully.
 - **Manual Operations**: verified multi-file drag-and-drop works flawlessly, document drawer remains stable with zero refreshes or flashes, and docx content is fully readable by the model.
+
+---
+
+## 🛠️ Athena 3.7 — Deep-Think Config and Execution Fixes [LATEST]
+
+Version 3.7 fixes critical bugs in the Deep-Think reasoning layer (self-correction middleware), ensuring it extracts settings correctly during live Graph execution and executes reliably without throwing AttributeErrors.
+
+### 🧠 1. Class-Based Middleware & Config Propagation
+- **Subclassed AgentMiddleware**: Converted the `re_evaluate_answer` middleware from a dynamic decorator wrapper into a custom class `ReEvaluateAnswerMiddleware` subclassing `AgentMiddleware`.
+- **Config Type-Annotation**: Added a type-annotated `config: RunnableConfig = None` parameter to the `aafter_model` method signature. This allows LangGraph's `RunnableCallable` node wrapper to automatically detect the dependency and inject the active execution configuration (containing the `deep_think` parameter) during execution.
+- **Robust Config Fallbacks**: Added fallback checks to `get_config()`, `runtime.config`, and `runtime.runnable_config` to ensure it works in both production environments and unit testing dictionary mocks.
+
+### 🛡️ 2. Safe Message Extraction (AttributeError Prevention)
+- **Safe Extraction Helper**: Implemented a nested helper function `safe_get_msg_info()` to dynamically check the message object type. If the message is a dictionary, it uses safe `.get()` methods; if it is a Pydantic message object (such as `AIMessage` or `HumanMessage`), it retrieves attributes using `getattr()`. This prevents calling `.get()` on Pydantic objects which previously triggered `AttributeError: 'AIMessage' object has no attribute 'get'`.
+- **Early Exit on Empty Tool Calls**: Added validation to skip execution if `msg_content` is empty (such as during intermediate tool call emissions), allowing the model to execute tools without triggering deep thinking critique loops prematurely.
+
+### 📁 Files Modified
+
+| File | Change Summary |
+|------|---------------|
+| [middlewares.py](file:///d:/Work/Code/GithubProjects/LocalMind/src/backend/agents/middlewares.py) | Refactored `re_evaluate_answer` to `ReEvaluateAnswerMiddleware`, added signature type-annotations for `config`, and implemented type-safe message property getters. |
+
+### ✅ Verification
+- **Test Suite Status**: All **24 tests passed** successfully.
+- **Manual Operations**: Confirmed that toggling Deep-Think on the client now invokes the critique loop correctly and returns refined responses without throwing intermediate AttributeErrors during tool calls.
 
 
 
