@@ -1,24 +1,26 @@
 # ✧ Athena — Conversational AI Platform
 
-Athena is a high-performance conversational intelligence platform. The system integrates an asynchronous **FastAPI** backend driven by LangChain and LangGraph cognitive workflows, a highly secure multi-tenant session manager, and an isolated **Chroma Vector DB** retrieval-augmented generation (RAG) indexing pipeline. The frontend is built as a lightweight, responsive ES6 single-page application utilizing fluid glass panels with blur effects and dynamic wallpaper options.
+Athena is a conversational AI platform built with FastAPI, LangChain, LangGraph, PostgreSQL, and ChromaDB. The project combines asynchronous agent workflows, retrieval-augmented generation (RAG), multi-provider authentication, and persistent conversation management within a containerized architecture.
 
-## Purpose & Core Philosophy
+The backend is powered by FastAPI and LangGraph-based agent workflows, while the frontend is implemented as a lightweight ES6 single-page application focused on responsiveness and simplicity. Athena was developed as both a functional AI application and a practical exploration of modern backend engineering, AI orchestration, and software architecture.
 
-> **Note:** Athena is a student solo / learning project. Before embarking on this build, I was unfamiliar with roughly 90% of the underlying production tech stack. This project served as an end-to-end sandbox to push past basic coding syntax and master complex, modern backend systems architectures on the fly.
+### Purpose & Core Philosophy
 
-Athena was not built to compete with massive corporate AI ecosystems like ChatGPT or Gemini on model size or raw training weights. Instead, it is an **Enterprise AI Gateway & Orchestration Framework**.
+> **Note**: Athena is a student solo project developed as a practical deep dive into modern AI application development and backend architecture. Many of the technologies used throughout the system were learned during the project's development, making Athena both a functional conversational AI platform and a comprehensive learning experience spanning authentication, databases, RAG pipelines, agent orchestration, and containerized deployment.
 
-The purpose of this project was to solve the critical "missing runway" that real-world businesses face when adopting generative AI: **data sovereignty, infrastructure flexibility, and deterministic guardrails**. While commercial chatbots act as rigid, closed-source black boxes, Athena provides an open, fully containerized, and multi-tenant architecture designed to give developers absolute control over their data, memory layers, and AI tool execution.
+The purpose of this project was to learn how to build a clean, custom AI chatbot setup from scratch that handles real-world features: **user data privacy, model flexibility, and custom developer control**. While commercial chatbots can be closed-off and hard to customize, Athena is built to be a simple, containerized, and multi-tenant setup that lets us experiment with custom memory layers, document retrieval, and tool configurations.
 
-### ⚖️ How Athena Compares to Commercial Platforms
+### ⚖️ Design Goals and Architectural Choices
 
-| Architectural Pillar | Commercial Platforms (ChatGPT / Gemini) | Athena Platform |
-| --- | --- | --- |
-| **Data Sovereignty** | Data is sent to external cloud environments and potentially used for model training unless specifically opted out. | **Absolute Privacy.** Multi-tenant document indexing securely isolates vector data blocks locally by User ID using Chroma DB. |
-| **Model Elasticity** | Locked into a single vendor's proprietary ecosystem, API pricing tiers, and infrastructure availability. | **Zero Lock-In.** Built on an asynchronous FastAPI and LangChain backend, allowing you to swap model brains (Gemini, OpenAI, or local Llama) instantly. |
-| **Execution Control** | Tool calls (plugins/extensions) operate as a black box with hidden prompts, hard timeouts, and minimal telemetry. | **Granular Governance.** Features a modular "Tools Drawer" running on LangGraph, giving you full control to inspect, time, or swap tools seamlessly. |
-| **Safety & Stability** | Relies entirely on the base model's internal prompt alignment, making it vulnerable to hallucinations or logic drops. | **Middleware Enforcement.** Intercepts traffic via custom pipelines (`ModelFallbackMiddleware`, `PIIMiddleware`) and self-critiques drafts using an `@after_model` hook. |
-| **Infrastructure** | Proprietary, managed web applications that cannot be audited or deployed within private corporate clouds. | **Fully Deterministic.** Multi-containerized via Docker & Docker Compose, ensuring the entire stack runs identically in any local or production sandbox. |
+Athena was not designed to compete with large-scale commercial AI platforms. Instead, the project focuses on exploring architectural decisions commonly found in modern AI applications while maintaining flexibility for experimentation and learning.
+
+| Design Area      | Typical Hosted AI Services                                                                     | Athena                                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Data Storage     | User data is typically managed within vendor-controlled cloud infrastructure.                  | Documents and vector indexes are separated by user identifiers and can be stored locally or synchronized with Google Drive.    |
+| Model Providers  | Usually tied to a specific model provider and deployment environment.                          | Supports interchangeable model providers through a modular LangChain-based architecture.                                       |
+| Tool Integration | Tool execution is managed internally by the platform.                                          | Tool definitions, workflows, and middleware layers are directly configurable within the codebase.                              |
+| Agent Control    | Internal reasoning and orchestration mechanisms are generally abstracted away from developers. | Agent workflows are implemented using LangGraph, allowing experimentation with prompts, tools, middleware, and execution flow. |
+| Deployment       | Fully managed cloud services.                                                                  | Self-hosted Docker-based deployment suitable for local development and experimentation.                                        |
 
 ---
 
@@ -33,9 +35,9 @@ The purpose of this project was to solve the critical "missing runway" that real
 *   **Asynchronous LangChain Agentic Reasoning**: A backend loop built on LangChain and LangGraph. It runs asynchronously to break down complex user queries, maintain execution flow, and dynamically orchestrate tool usage without blocking the server.
 *   **Integrated Agent Tools**: A suite of modular tools the AI can actively select and trigger during inference, including Google Search (Google Search), Document Retrieval (retrieve_context), Web Scraping (fetch_web_page), and Gmail access (read_emails).
 *   **Cognitive Middleware Pipeline**: Integrates native middlewares via `langchain.agents.middleware` to secure, stabilize, and audit agent interactions. This includes automatic model failure recovery (`ModelFallbackMiddleware`), input sanitization and credential scrubbing (`PIIMiddleware`).
-*   **Deep-Think Reasoner**: A post-inference evaluation layer utilizing an `@after_model` middleware hook. When enabled, it intercepts the initial generated draft to self-critique for logical alignment, correct potential hallucinations, and verify syntax formats before final output delivery.
+*   **Deep-Think Reasoner**: A post-inference self-critique layer built by subclassing `AgentMiddleware` as the `ReEvaluateAnswerMiddleware` class with explicit configuration signatures. When enabled, it intercepts the initial generated draft to self-critique logic, verify code syntax, and refine the answer before final client delivery.
 *   **Multi-Tenant RAG Pipeline (Chroma DB)**: A secure vector database system backed by Chroma DB that isolates indexes by user ID. It supports document extraction, chunking, and similarity search for standard formats (`.pdf`, `.docx`, `.md`, `.txt`) and raw source code files (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`).
-*   **Isolated Ingestion & Multi-File Uploads**: A drag-and-drop file upload interface supporting multi-file uploads. Files are stored locally or synced directly with Google Drive, utilizing synchronous buffer caching to prevent handle invalidation during large file transfers.
+*   **Isolated Ingestion & Multi-File Uploads**: A drag-and-drop file upload interface supporting multi-file uploads. Users can choose to store their files either on their own Google Drive (via OAuth2 synchronization) or locally on the server machine, utilizing synchronous buffer caching to prevent handle invalidation during transfers.
 *   **Specialized Agent Personalities**: Selectable system-level prompts (e.g., Coder, Researcher, Assistant, or a collaborative 👤 Human partner) that alter the agent's baseline behavior and response formatting on the fly.
 *   **Persistent Conversation Memory**: Thread-safe message tracking backed by PostgreSQL and async SQLAlchemy connection pooling, ensuring contextual memory is maintained seamlessly across multiple chat turns.
 *   **Multi-Provider Authentication**: Supports standard local credentials via stateless JWTs (fastapi-users) alongside Google OAuth2 integration, allowing the system to securely interact with the user's Google Workspace.
@@ -73,7 +75,7 @@ Athena is built using a clean, modern, and highly modular technology stack desig
 
 ---
 
-## 📈 Version History
+## 📈 Development Journey
 
 Athena has evolved through key development stages to reach its final production-ready state:
 
@@ -96,7 +98,7 @@ Athena has evolved through key development stages to reach its final production-
 Below is the complete, high-fidelity directory tree of the finalized Athena repository:
 
 ```text
-LocalMind/
+Athena/
 ├── .env                              # Local environmental variables & API secrets (ignored)
 ├── .gitignore                        # Extensive git ignore configuration
 ├── .uploads/                         # Hidden directory storing local document attachments and Chroma vector DB indices
