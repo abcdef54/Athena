@@ -1,4 +1,4 @@
-# ✧ Athena — Conversational AI Platform
+# Athena — Conversational AI Platform
 
 Athena is a conversational AI platform built with FastAPI, LangChain, LangGraph, PostgreSQL, and ChromaDB. The project combines asynchronous agent workflows, retrieval-augmented generation (RAG), multi-provider authentication, and persistent conversation management within a containerized architecture.
 
@@ -10,7 +10,7 @@ The backend is powered by FastAPI and LangGraph-based agent workflows, while the
 
 The purpose of this project was to learn how to build a clean, custom AI chatbot setup from scratch that handles real-world features: **user data privacy, model flexibility, and custom developer control**. While commercial chatbots can be closed-off and hard to customize, Athena is built to be a simple, containerized, and multi-tenant setup that lets us experiment with custom memory layers, document retrieval, and tool configurations.
 
-### ⚖️ Design Goals and Architectural Choices
+### Design Goals and Architectural Choices
 
 Athena was not designed to compete with large-scale commercial AI platforms. Instead, the project focuses on exploring architectural decisions commonly found in modern AI applications while maintaining flexibility for experimentation and learning.
 
@@ -24,13 +24,13 @@ Athena was not designed to compete with large-scale commercial AI platforms. Ins
 
 ---
 
-## 📺 Application Demo
+## Application Demo
 
-[![Demo Video](https://img.shields.io/badge/▶_Watch_Demo_Video-Click_Here-blue?style=for-the-badge&logo=youtube)](https://github.com/user-attachments/assets/cb7cbb49-3660-4212-8465-575974ce86c8)
+[![Demo Video](https://img.shields.io/badge/Watch_Demo_Video-Click_Here-blue?style=for-the-badge&logo=youtube)](https://github.com/user-attachments/assets/cb7cbb49-3660-4212-8465-575974ce86c8)
 
 ---
 
-## 🌟 Core Features
+## Core Features
 
 *   **Asynchronous LangChain Agentic Reasoning**: A backend loop built on LangChain and LangGraph. It runs asynchronously to break down complex user queries, maintain execution flow, and dynamically orchestrate tool usage without blocking the server.
 *   **Integrated Agent Tools**: A suite of modular tools the AI can actively select and trigger during inference, including Google Search (Google Search), Document Retrieval (retrieve_context), Web Scraping (fetch_web_page), and Gmail access (read_emails).
@@ -38,7 +38,7 @@ Athena was not designed to compete with large-scale commercial AI platforms. Ins
 *   **Deep-Think Reasoner**: A post-inference self-critique layer built by subclassing `AgentMiddleware` as the `ReEvaluateAnswerMiddleware` class with explicit configuration signatures. When enabled, it intercepts the initial generated draft to self-critique logic, verify code syntax, and refine the answer before final client delivery.
 *   **Multi-Tenant RAG Pipeline (Chroma DB)**: A secure vector database system backed by Chroma DB that isolates indexes by user ID. It supports document extraction, chunking, and similarity search for standard formats (`.pdf`, `.docx`, `.md`, `.txt`) and raw source code files (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`).
 *   **Isolated Ingestion & Multi-File Uploads**: A drag-and-drop file upload interface supporting multi-file uploads. Users can choose to store their files either on their own Google Drive (via OAuth2 synchronization) or locally on the server machine, utilizing synchronous buffer caching to prevent handle invalidation during transfers.
-*   **Specialized Agent Personalities**: Selectable system-level prompts (e.g., Coder, Researcher, Assistant, or a collaborative 👤 Human partner) that alter the agent's baseline behavior and response formatting on the fly.
+*   **Specialized Agent Personalities**: Selectable system-level prompts (e.g., Coder, Researcher, Assistant, or a collaborative Human partner) that alter the agent's baseline behavior and response formatting on the fly.
 *   **Persistent Conversation Memory**: Thread-safe message tracking backed by PostgreSQL and async SQLAlchemy connection pooling, ensuring contextual memory is maintained seamlessly across multiple chat turns.
 *   **Multi-Provider Authentication**: Supports standard local credentials via stateless JWTs (fastapi-users) alongside Google OAuth2 integration, allowing the system to securely interact with the user's Google Workspace.
 *   **Client-Side Rendering Engine**: Real-time UI rendering of complex LaTeX math formulas via KaTeX (with inline currency guards) and programming code blocks using Highlight.js, complete with copy-to-clipboard functionality.
@@ -47,7 +47,7 @@ Athena was not designed to compete with large-scale commercial AI platforms. Ins
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 Athena is built using a clean, modern, and highly modular technology stack designed for optimal concurrency and extensibility:
 
@@ -75,7 +75,7 @@ Athena is built using a clean, modern, and highly modular technology stack desig
 
 ---
 
-## 📈 Development Journey
+## Development Journey
 
 Athena has evolved through key development stages to reach its final production-ready state:
 
@@ -87,13 +87,13 @@ Athena has evolved through key development stages to reach its final production-
 *   **Athena v3.2 & v3.2.1 (Refinement & Standardizations)**: Transitioned UI to a lightweight glass design with dynamic wallpapers.
 *   **Athena v3.3 & v3.3.1 (Code RAG & Usage Limits)**: Integrated raw code file parsing into the RAG pipeline, established database usage limits, and abstracted turn update helpers.
 *   **Athena v3.4 (Lazy Thread Generation)**: Introduced lazy conversation generation where thread database allocation occurs only upon the first user prompt or upload.
-*   **Athena v3.5 (Human Personality)**: Integrated the standalone local `👤 Human` conversational personality option.
+*   **Athena v3.5 (Human Personality)**: Integrated the standalone local `Human` conversational personality option.
 *   **Athena v3.6 (Multi-File Ingest & Watcher Fixes)**: Resolved drag-and-drop file handle invalidation with synchronous buffer caching, moved local uploads to a hidden `.uploads/` directory to prevent live-reload refreshes, and integrated `.docx` parsing requirements.
 *   **Athena v3.7 (Deep-Think Config & Execution Fixes) [LATEST]**: Fixed Deep-Think middleware configuration propagation by subclassing `AgentMiddleware` with type-annotated parameters, and implemented type-safe message getters to prevent `AttributeError` during intermediate tool execution.
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 Below is the complete, high-fidelity directory tree of the finalized Athena repository:
 
@@ -180,7 +180,7 @@ Athena/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Environment Variables (`.env`)
 Create a `.env` file in the project root containing your required credentials. This configuration is needed for both deployment methods:
@@ -293,7 +293,7 @@ Athena is built entirely on client-side modules:
 
 ---
 
-## 🔌 API Reference
+## API Reference
 
 | Domain | Endpoint | Method | Description |
 | :--- | :--- | :--- | :--- |
