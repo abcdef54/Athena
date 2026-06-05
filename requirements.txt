@@ -1,7 +1,3 @@
-# ==========================================
-# LocalMind Python Dependencies (Athena 2.0)
-# ==========================================
-
 # Core FastAPI Application & Auth
 fastapi>=0.100.0
 uvicorn>=0.22.0
