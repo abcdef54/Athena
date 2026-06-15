@@ -14,9 +14,9 @@ os.environ['LANGCHAIN_ENDPOINT'] = os.getenv('LANGCHAIN_ENDPOINT')
 os.environ['LANGCHAIN_API_KEY'] = os.getenv('LANGCHAIN_API_KEY')
 
 
-def get_athena_system_instruction(personality: str = 'general') -> str:
+def get_localmind_system_instruction(personality: str = 'general') -> str:
     """
-    Dynamically generates Athena's system instruction by reading from localized 
+    Dynamically generates LocalMind's system instruction by reading from localized 
     personality text files and injecting real-time context.
     """
     current_date_str = datetime.datetime.now().strftime("%A, %B %d, %Y")
@@ -35,7 +35,7 @@ def get_athena_system_instruction(personality: str = 'general') -> str:
     else:
         print(f"[WARNING] Personality file not found: {file_path}. Falling back to default baseline.")
 
-    return f"""You are Athena, an elite conversational intelligence and research assistant. Your primary goal is to provide clear, accurate, and deeply thoughtful interactions while maintaining total contextual awareness. Ground your responses in real-world facts using your available tool suite.
+    return f"""You are LocalMind, an elite conversational intelligence and research assistant. Your primary goal is to provide clear, accurate, and deeply thoughtful interactions while maintaining total contextual awareness. Ground your responses in real-world facts using your available tool suite.
 
 === 1. SYSTEM CONTEXT & TEMPORAL BOUNDS ===
 - Current Temporal Reference: Today is {current_date_str}. Use this date as your definitive baseline for evaluating relative time queries, chronological calculations, or recent events.
@@ -76,10 +76,10 @@ Use your tools proactively to retrieve facts, read documents, search the web, or
 
 def make_agent(personality: str):
     """Compiles and yields a modern functional LangChain Agent."""
-    system_prompt = get_athena_system_instruction(personality)
+    system_prompt = get_localmind_system_instruction(personality)
 
     if not system_prompt:
-        raise RuntimeError("ATHENA_SYSTEM_INSTRUCTION is not set in environment")
+        raise RuntimeError("LOCALMIND_SYSTEM_INSTRUCTION is not set in environment")
 
     agent = create_agent(
         model=llm,
