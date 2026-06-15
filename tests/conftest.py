@@ -17,7 +17,7 @@ os.environ["GOOGLE_API_KEY"] = "mock-google-api-key"
 os.environ["GOOGLE_EMBEDDING_MODEL_NAME"] = "models/text-embedding-004"
 os.environ["GOOGLE_GENERATIVE_AI_MODEL_NAME"] = "gemini-1.5-flash"
 os.environ["GOOGLE_GENEATIVE_AI_FALLBACK_MODELS"] = "gemini-1.5-pro"
-os.environ["ATHENA_SYSTEM_INSTRUCTION"] = "You are Athena."
+os.environ["LOCALMIND_SYSTEM_INSTRUCTION"] = "You are LocalMind."
 os.environ["LANGCHAIN_ENDPOINT"] = "http://localhost:8000"
 os.environ["LANGCHAIN_API_KEY"] = "mock-lc-key"
 

@@ -3,12 +3,12 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: athena_postgres
+    container_name: localmind_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: athena_db
+      POSTGRES_DB: localmind_db
     ports:
       - "5433:5432"
     volumes:
@@ -18,12 +18,12 @@ services:
     build:
       context: .
       dockerfile: ./src/backend/backend.Dockerfile
-    container_name: athena_backend
+    container_name: localmind_backend
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      POSTGRESQL_URL: postgresql+asyncpg://postgres:admin@db:5432/athena_db
+      POSTGRESQL_URL: postgresql+asyncpg://postgres:admin@db:5432/localmind_db
       PYTHONPATH: /app
     ports:
       - "8000:8000"
@@ -34,7 +34,7 @@ services:
     build:
       context: .
       dockerfile: ./src/frontend/frontend.Dockerfile
-    container_name: athena_frontend
+    container_name: localmind_frontend
     restart: unless-stopped
     ports:
       - "5500:80"

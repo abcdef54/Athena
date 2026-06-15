@@ -20,7 +20,6 @@ GENERATIVE_MODEL_NAME = os.getenv('GOOGLE_GENERATIVE_AI_MODEL_NAME')
 llm = ChatGoogleGenerativeAI(
     model=GENERATIVE_MODEL_NAME,
     temperature=0.1,
-
 )
 
 query_embedding_model = GoogleGenerativeAIEmbeddings(

@@ -1,20 +1,20 @@
-# Athena — Conversational AI Platform
+# LocalMind — Conversational AI Platform
 
-Athena is a conversational AI platform built with FastAPI, LangChain, LangGraph, PostgreSQL, and ChromaDB. The project combines asynchronous agent workflows, retrieval-augmented generation (RAG), multi-provider authentication, and persistent conversation management within a containerized architecture.
+LocalMind is a conversational AI platform built with FastAPI, LangChain, LangGraph, PostgreSQL, and ChromaDB. The project combines asynchronous agent workflows, retrieval-augmented generation (RAG), multi-provider authentication, and persistent conversation management within a containerized architecture.
 
-The backend is powered by FastAPI and LangGraph-based agent workflows, while the frontend is implemented as a lightweight ES6 single-page application focused on responsiveness and simplicity. Athena was developed as both a functional AI application and a practical exploration of modern backend engineering, AI orchestration, and software architecture.
+The backend is powered by FastAPI and LangGraph-based agent workflows, while the frontend is implemented as a lightweight ES6 single-page application focused on responsiveness and simplicity. LocalMind was developed as both a functional AI application and a practical exploration of modern backend engineering, AI orchestration, and software architecture.
 
 ### Purpose & Core Philosophy
 
-> **Note**: Athena is a student solo project developed as a practical deep dive into modern AI application development and backend architecture. Many of the technologies used throughout the system were learned during the project's development, making Athena both a functional conversational AI platform and a comprehensive learning experience spanning authentication, databases, RAG pipelines, agent orchestration, and containerized deployment.
+> **Note**: LocalMind is a student solo project developed as a practical deep dive into modern AI application development and backend architecture. Many of the technologies used throughout the system were learned during the project's development, making LocalMind both a functional conversational AI platform and a comprehensive learning experience spanning authentication, databases, RAG pipelines, agent orchestration, and containerized deployment.
 
-The purpose of this project was to learn how to build a clean, custom AI chatbot setup from scratch that handles real-world features: **user data privacy, model flexibility, and custom developer control**. While commercial chatbots can be closed-off and hard to customize, Athena is built to be a simple, containerized, and multi-tenant setup that lets us experiment with custom memory layers, document retrieval, and tool configurations.
+The purpose of this project was to learn how to build a clean, custom AI chatbot setup from scratch that handles real-world features: **user data privacy, model flexibility, and custom developer control**. While commercial chatbots can be closed-off and hard to customize, LocalMind is built to be a simple, containerized, and multi-tenant setup that lets us experiment with custom memory layers, document retrieval, and tool configurations.
 
 ### Design Goals and Architectural Choices
 
-Athena was not designed to compete with large-scale commercial AI platforms. Instead, the project focuses on exploring architectural decisions commonly found in modern AI applications while maintaining flexibility for experimentation and learning.
+LocalMind was not designed to compete with large-scale commercial AI platforms. Instead, the project focuses on exploring architectural decisions commonly found in modern AI applications while maintaining flexibility for experimentation and learning.
 
-| Design Area      | Typical Hosted AI Services                                                                     | Athena                                                                                                                         |
+| Design Area      | Typical Hosted AI Services                                                                     | LocalMind                                                                                                                         |
 | ---------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Data Storage     | User data is typically managed within vendor-controlled cloud infrastructure.                  | Documents and vector indexes are separated by user identifiers and can be stored locally or synchronized with Google Drive.    |
 | Model Providers  | Usually tied to a specific model provider and deployment environment.                          | Supports interchangeable model providers through a modular LangChain-based architecture.                                       |
@@ -49,7 +49,7 @@ Athena was not designed to compete with large-scale commercial AI platforms. Ins
 
 ## Technology Stack
 
-Athena is built using a clean, modern, and highly modular technology stack designed for optimal concurrency and extensibility:
+LocalMind is built using a clean, modern, and highly modular technology stack designed for optimal concurrency and extensibility:
 
 ### Frontend
 - **HTML5 (Semantic UI)**: Semantic elements for structural layout, accessibility, and high-fidelity indexing.
@@ -77,28 +77,28 @@ Athena is built using a clean, modern, and highly modular technology stack desig
 
 ## Development Journey
 
-Athena has evolved through key development stages to reach its final production-ready state:
+LocalMind has evolved through key development stages to reach its final production-ready state:
 
-*   **Athena v1.0 (The Foundation)**: Minimal single-page chat interface supporting basic conversational exchanges and active session in-memory context retention.
-*   **Athena v2.0 (Identity & RAG Framework)**: Decoupled client-server architecture introducing JWT Local Auth, Google OAuth2 handshakes, document upload drawers, isolated Chroma vector search, and footnote citations.
-*   **Athena v2.2 (Soft-Delete Migration)**: Auditable data persistence using logical `deleted_at` cascades across SQLAlchemy database models.
-*   **Athena v3.0 (Rich Formatting)**: Rich educational rendering including KaTeX LaTeX mathematical notations, Highlight.js code editors, and Copy-to-Clipboard glass overlays.
-*   **Athena v3.1 & v3.1.1 (Tables & Tools Showcase)**: Added pipe-delimited grid-table support with scroll controls, and an Agent Tools drawer displaying modular workflows.
-*   **Athena v3.2 & v3.2.1 (Refinement & Standardizations)**: Transitioned UI to a lightweight glass design with dynamic wallpapers.
-*   **Athena v3.3 & v3.3.1 (Code RAG & Usage Limits)**: Integrated raw code file parsing into the RAG pipeline, established database usage limits, and abstracted turn update helpers.
-*   **Athena v3.4 (Lazy Thread Generation)**: Introduced lazy conversation generation where thread database allocation occurs only upon the first user prompt or upload.
-*   **Athena v3.5 (Human Personality)**: Integrated the standalone local `Human` conversational personality option.
-*   **Athena v3.6 (Multi-File Ingest & Watcher Fixes)**: Resolved drag-and-drop file handle invalidation with synchronous buffer caching, moved local uploads to a hidden `.uploads/` directory to prevent live-reload refreshes, and integrated `.docx` parsing requirements.
-*   **Athena v3.7 (Deep-Think Config & Execution Fixes) [LATEST]**: Fixed Deep-Think middleware configuration propagation by subclassing `AgentMiddleware` with type-annotated parameters, and implemented type-safe message getters to prevent `AttributeError` during intermediate tool execution.
+*   **LocalMind v1.0 (The Foundation)**: Minimal single-page chat interface supporting basic conversational exchanges and active session in-memory context retention.
+*   **LocalMind v2.0 (Identity & RAG Framework)**: Decoupled client-server architecture introducing JWT Local Auth, Google OAuth2 handshakes, document upload drawers, isolated Chroma vector search, and footnote citations.
+*   **LocalMind v2.2 (Soft-Delete Migration)**: Auditable data persistence using logical `deleted_at` cascades across SQLAlchemy database models.
+*   **LocalMind v3.0 (Rich Formatting)**: Rich educational rendering including KaTeX LaTeX mathematical notations, Highlight.js code editors, and Copy-to-Clipboard glass overlays.
+*   **LocalMind v3.1 & v3.1.1 (Tables & Tools Showcase)**: Added pipe-delimited grid-table support with scroll controls, and an Agent Tools drawer displaying modular workflows.
+*   **LocalMind v3.2 & v3.2.1 (Refinement & Standardizations)**: Transitioned UI to a lightweight glass design with dynamic wallpapers.
+*   **LocalMind v3.3 & v3.3.1 (Code RAG & Usage Limits)**: Integrated raw code file parsing into the RAG pipeline, established database usage limits, and abstracted turn update helpers.
+*   **LocalMind v3.4 (Lazy Thread Generation)**: Introduced lazy conversation generation where thread database allocation occurs only upon the first user prompt or upload.
+*   **LocalMind v3.5 (Human Personality)**: Integrated the standalone local `Human` conversational personality option.
+*   **LocalMind v3.6 (Multi-File Ingest & Watcher Fixes)**: Resolved drag-and-drop file handle invalidation with synchronous buffer caching, moved local uploads to a hidden `.uploads/` directory to prevent live-reload refreshes, and integrated `.docx` parsing requirements.
+*   **LocalMind v3.7 (Deep-Think Config & Execution Fixes) [LATEST]**: Fixed Deep-Think middleware configuration propagation by subclassing `AgentMiddleware` with type-annotated parameters, and implemented type-safe message getters to prevent `AttributeError` during intermediate tool execution.
 
 ---
 
 ## Repository Structure
 
-Below is the complete, high-fidelity directory tree of the finalized Athena repository:
+Below is the complete, high-fidelity directory tree of the finalized LocalMind repository:
 
 ```text
-Athena/
+LocalMind/
 ├── .env                              # Local environmental variables & API secrets (ignored)
 ├── .gitignore                        # Extensive git ignore configuration
 ├── .uploads/                         # Hidden directory storing local document attachments and Chroma vector DB indices
@@ -110,7 +110,7 @@ Athena/
 │   ├── script.py.mako                # Migration template file
 │   └── versions/                     # Generated database schema migration history files
 ├── pytest.ini                        # Pytest runner configurations
-├── README.md                         # Project documentation (Athena Final Release)
+├── README.md                         # Project documentation (LocalMind Final Release)
 ├── requirements.txt                  # Python environment packages
 ├── src/
 │   ├── backend/                      # FastAPI Asynchronous Web Engine
@@ -198,10 +198,10 @@ JWT_SECRET_KEY = "your-secure-jwt-secret-string"
 # PostgreSQL database connection URL
 # Choose the correct connection URL depending on your setup:
 # For Docker Compose (Method 1):
-POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@db:5432/athena_db"
+POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@db:5432/localmind_db"
 
 # For Manual Local Setup (Method 2):
-# POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/athena_db"
+# POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/localmind_db"
 ```
 
 #### Optional Keys (Integrations & Diagnostics)
@@ -249,10 +249,10 @@ If you prefer running the servers natively on your host machine for development:
 
 #### A. Database Configuration
 Before booting up the backend, ensure you have a running PostgreSQL instance:
-1. Create a database named `athena_db`.
+1. Create a database named `localmind_db`.
 2. Configure your connection string in `.env` (using the `localhost` database connection string):
    ```ini
-   POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/athena_db"
+   POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/localmind_db"
    ```
 
 #### B. Backend Setup
@@ -284,7 +284,7 @@ pytest -v
 ```
 
 #### D. Frontend Launch
-Athena is built entirely on client-side modules:
+LocalMind is built entirely on client-side modules:
 *   Serve the `src/frontend/` folder using any lightweight web server. For example:
     ```bash
     python -m http.server 5500

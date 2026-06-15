@@ -207,7 +207,7 @@ async def test_attachment_google_drive(db_session: AsyncSession, test_user: User
 async def test_soft_delete_conversation(db_session: AsyncSession, test_user: User):
     # 1. Create a conversation and add a message
     conv = await crud.create_conversation("Soft Delete Conv", test_user, db_session)
-    msg = await crud.create_message("Hello Athena Soft Delete", conv.id, "user", db_session, user=test_user)
+    msg = await crud.create_message("Hello LocalMind Soft Delete", conv.id, "user", db_session, user=test_user)
 
     # 2. Call delete_conversation to trigger soft delete
     with patch("src.backend.database.crud.ingest_docs", AsyncMock()), \

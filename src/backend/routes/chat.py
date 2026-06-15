@@ -42,9 +42,9 @@ async def chat(
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail=(
-                    "You have reached the free limit. To continue using Athena, "
+                    "You have reached the free limit. To continue using LocalMind, "
                     "please clone the project from this GitHub repo and configure your own keys: "
-                    "https://github.com/abcdef54/Athena"
+                    "https://github.com/abcdef54/LocalMind"
                 )
             )
 
@@ -194,9 +194,9 @@ async def update_message(
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail=(
-                    "You have reached the free limit. To continue using Athena, "
+                    "You have reached the free limit. To continue using LocalMind, "
                     "please clone the project from this GitHub repo and configure your own keys: "
-                    "https://github.com/abcdef54/Athena"
+                    "https://github.com/abcdef54/LocalMind"
                 )
             )
 

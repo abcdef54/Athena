@@ -13,7 +13,7 @@ async def test_chat_routes(auth_client: AsyncClient, test_user: User, db_session
     # 1. POST chat message
     chat_payload = {
         "conversation_id": str(conv.id),
-        "content": "Hello Athena, list my files",
+        "content": "Hello LocalMind, list my files",
         "deep_think": False
     }
     
@@ -59,7 +59,7 @@ async def test_chat_personality(auth_client: AsyncClient, test_user: User, db_se
     # 1. POST chat message with a specific personality
     chat_payload = {
         "conversation_id": str(conv.id),
-        "content": "Hello Athena Code Architect",
+        "content": "Hello LocalMind Code Architect",
         "personality": "coder",
         "deep_think": False
     }
@@ -134,7 +134,7 @@ async def test_chat_free_limit(auth_client: AsyncClient, test_user: User):
     assert response.status_code == 402
     data = response.json()
     assert "You have reached the free limit" in data["detail"]
-    assert "https://github.com/abcdef54/Athena" in data["detail"]
+    assert "https://github.com/abcdef54/LocalMind" in data["detail"]
 
     # 4. Patch a message, should also fail with 402
     update_payload = {

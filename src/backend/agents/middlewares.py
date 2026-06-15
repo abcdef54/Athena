@@ -3,7 +3,7 @@ import dotenv
 
 from typing import Any, Optional, Dict
 from langchain.messages import HumanMessage
-from langchain.agents.middleware import ModelFallbackMiddleware, PIIMiddleware, HumanInTheLoopMiddleware, after_model, AgentMiddleware
+from langchain.agents.middleware import ModelFallbackMiddleware, PIIMiddleware, HumanInTheLoopMiddleware, AgentMiddleware, wrap_model_call, AgentState
 from langchain_core.runnables import RunnableConfig
 
 from .config import llm
@@ -26,6 +26,19 @@ human_in_the_loop = HumanInTheLoopMiddleware(
     },
     description_prefix="Tool execution pending approval"
 )
+
+class DynamicModelSelection(AgentMiddleware):
+    async def abefore_agent(self, state: AgentState, runtime):
+        pass
+    
+    async def abefore_model(self, state: AgentState, runtime):
+        pass
+
+    async def aafter_model(self, state: AgentState, runtime):
+        pass
+
+    async def aafter_agent(self, state: AgentState, runtime):
+        pass
 
 class ReEvaluateAnswerMiddleware(AgentMiddleware):
     async def aafter_model(self, state: dict, runtime: Any, config: RunnableConfig = None) -> Optional[dict]:
@@ -91,10 +104,7 @@ class ReEvaluateAnswerMiddleware(AgentMiddleware):
         print(f'[DEBUG] ORIGINAL AGENT RESPONSE: {msg_content}')
     
         critique_prompt = f"""
-        For development testing purposes, ALWAYS append your answer with "[DEEP THINK: REFINED]" to verify your answer has been refined.
-        OR [DEEP THINK: UNCHANGED] if you agree that the original response is already perfect.
-    
-        You are Athena's Deep Reasoning and Quality Assurance Layer.
+        You are LocalMind's Deep Reasoning and Quality Assurance Layer.
     
         Your job is NOT to automatically rewrite answers.
     
