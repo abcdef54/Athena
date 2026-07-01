@@ -242,6 +242,14 @@ LocalMind/
 2. Universal Self-Consistency for Large Language Model Generation
 3. Scalable Best-of-N Selection for Large Language Models via Self-Certainty
 
+## Future Updates
+
+* **Multimodal Support (Image Upload & Processing)**: Implement image upload capabilities that encode images to base64 on the client side, allowing the Python backend to process and feed raw image payloads directly to local GGUF vision-language models (e.g., `Llama-3.2-Vision` or `Qwen2-VL`) for local visual chat.
+* **Enhanced Retrieval-Augmented Generation (RAG)**: Improve document search and grounding by implementing local reranker models (e.g., cross-encoders) and hybrid retrieval (combining dense semantic embeddings with sparse keyword search) before feeding document contexts to the reasoning pipelines.
+* **Custom Model Personalities**: Provide an interface allowing the user to configure, save, and manage entirely custom behavioral profiles and identities, giving maximum freedom to shape the model's system prompt instructions.
+* **Conversation Memory Inspector**: Add a toggleable memory panel in the user interface that displays and allows real-time editing of the conversation's active state. Users can add, modify, or remove memory items (taking effect on the next message), write to a persistent "long-term memory" text area that remains preserved throughout the entire thread, and customize the message threshold that triggers automatic history summarization.
+* **Side-by-Side Model Comparison (Arena Mode)**: Leverage `llama-swap` to let users run a single prompt against multiple local GGUF models side-by-side, comparing their reasoning steps, generation metrics (tokens/second), and outputs.
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
