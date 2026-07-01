@@ -1,62 +1,27 @@
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Enum, Table, text
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, BigInteger, Float, Boolean, Table
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, DeclarativeBase, declared_attr
+from sqlalchemy.orm import relationship, DeclarativeBase
 from sqlalchemy.sql import func
-
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyBaseOAuthAccountTableUUID
 
 import uuid
 import datetime
-import enum
 
 class Base(DeclarativeBase):
     pass
 
 
-class StorageProvider(enum.Enum):
-    LOCAL = 'local'
-    GOOGLE_DRIVE = 'google_drive'
-
-
-class User(SQLAlchemyBaseUserTableUUID, Base):
-    __tablename__ = "users"
-
-    # messages = relationship("Message", back_populates="user", passive_deletes=True, cascade="all, delete-orphan")
-    conversations = relationship("Conversation", back_populates="user", passive_deletes=True, cascade="all, delete-orphan")
-    oauth_accounts = relationship('UserOAuthToken', lazy='selectin', back_populates='user', passive_deletes=True, cascade="all, delete-orphan")
-    
-    preview_turn_useds = Column(Integer, default=0, server_default=text("0"))
-    max_preview_turn = Column(Integer, default=3, server_default=text("3"))
-
-    created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
-    deleted_at = Column(DateTime, nullable=True)
-
-
-class UserOAuthToken(SQLAlchemyBaseOAuthAccountTableUUID, Base):
-    __tablename__ = 'user_oauth_tokens'
-
-    @declared_attr
-    def user_id(cls):
-        return Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-
-    # MANUAL COLUMNS (The extra info your specific app needs to track):
-    account_email = Column(String(255), nullable=False)
-    scopes = Column(Text)
-    deleted_at = Column(DateTime, nullable=True)
-
-    # RELATIONSHIPS (Tells SQLAlchemy how to join tables in queries):
-    user = relationship('User', back_populates='oauth_accounts')
-
 class Conversation(Base):
     __tablename__ = "conversations"
 
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     deleted_at = Column(DateTime, nullable=True)
 
-    user = relationship("User", back_populates="conversations", passive_deletes=True)
+    summary = Column(Text, nullable=True)
+    message_count = Column(Integer, nullable=False, default=0)
+    unsummarized_message_count = Column(Integer, nullable=False, default=0)
+
     messages = relationship("Message", back_populates="conversation", passive_deletes=True, cascade="all, delete-orphan")
     attachments = relationship("Attachment", back_populates="conversation", passive_deletes=True, cascade="all, delete-orphan")
 
@@ -76,6 +41,9 @@ class Message(Base):
     content = Column(Text, nullable=False)
     role = Column(String(20), nullable=False)
     personality = Column(String(50), nullable=True)
+    model_name = Column(String(50), nullable=True)
+    reasoning_mode = Column(String(20), nullable=True)
+    temperature = Column(Float, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
@@ -89,14 +57,27 @@ class Attachment(Base):
     id = Column(UUID(as_uuid=True), nullable=False, primary_key=True, default=uuid.uuid4)
     conversation_id = Column(UUID(as_uuid=True), ForeignKey('conversations.id', ondelete="CASCADE"), nullable=False, index=True)
     file_name = Column(String(255), nullable=False)
-    # Local mode: contains full string path (e.g., "../../uploads/xyz.pdf")
-    # Google Drive mode: contains Google Drive File ID (e.g., "1pzschX3uMbxU...")
     file_path = Column(String(512), nullable=False)
     file_type = Column(String(255), nullable=False)
     file_size = Column(Integer, nullable=False)
     extracted_text = Column(Text, nullable=True)
-    storage_provider = Column(Enum(StorageProvider), default=StorageProvider.LOCAL, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
     conversation = relationship('Conversation', back_populates="attachments", passive_deletes=True)
+
+class InstalledModel(Base):
+    __tablename__ = "installed_models"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Display in the UI
+    display_name = Column(String, nullable=False)
+    # Name sent to llama-swap/OpenAI API
+    model_name = Column(String, nullable=False, unique=True)
+    hf_repo = Column(String, nullable=False)
+    gguf_file = Column(String, nullable=False)
+    local_path = Column(String, nullable=False)
+    quantization = Column(String, nullable=False)
+    size_bytes = Column(BigInteger, nullable=False)
+    installed_at = Column(DateTime, server_default=func.now())
+    is_default = Column(Boolean, nullable=False, default=False)

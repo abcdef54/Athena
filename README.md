@@ -1,312 +1,247 @@
-# LocalMind — Conversational AI Platform
+# LocalMind — Fully Local Conversational AI Platform
 
-LocalMind is a conversational AI platform built with FastAPI, LangChain, LangGraph, PostgreSQL, and ChromaDB. The project combines asynchronous agent workflows, retrieval-augmented generation (RAG), multi-provider authentication, and persistent conversation management within a containerized architecture.
+LocalMind is an application developed as part of research into scaling test-time compute. The reasoning modes feature in the application (`Medium`, `High`, and `Extra`) implements the findings of this research, allowing the system to allocate additional compute resources at inference time to improve answer accuracy.
 
-The backend is powered by FastAPI and LangGraph-based agent workflows, while the frontend is implemented as a lightweight ES6 single-page application focused on responsiveness and simplicity. LocalMind was developed as both a functional AI application and a practical exploration of modern backend engineering, AI orchestration, and software architecture.
+While the system is designed to run entirely locally without transmitting data to external servers, an active internet connection is required during the initial startup to download the default model (`Qwen/Qwen2.5-3B-Instruct-GGUF`). Internet access is also required to browse, download, and add new models from Hugging Face.
 
-### Purpose & Core Philosophy
+## Video Demo
 
-> **Note**: LocalMind is a student solo project developed as a practical deep dive into modern AI application development and backend architecture. Many of the technologies used throughout the system were learned during the project's development, making LocalMind both a functional conversational AI platform and a comprehensive learning experience spanning authentication, databases, RAG pipelines, agent orchestration, and containerized deployment.
-
-The purpose of this project was to learn how to build a clean, custom AI chatbot setup from scratch that handles real-world features: **user data privacy, model flexibility, and custom developer control**. While commercial chatbots can be closed-off and hard to customize, LocalMind is built to be a simple, containerized, and multi-tenant setup that lets us experiment with custom memory layers, document retrieval, and tool configurations.
-
-### Design Goals and Architectural Choices
-
-LocalMind was not designed to compete with large-scale commercial AI platforms. Instead, the project focuses on exploring architectural decisions commonly found in modern AI applications while maintaining flexibility for experimentation and learning.
-
-| Design Area      | Typical Hosted AI Services                                                                     | LocalMind                                                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Data Storage     | User data is typically managed within vendor-controlled cloud infrastructure.                  | Documents and vector indexes are separated by user identifiers and can be stored locally or synchronized with Google Drive.    |
-| Model Providers  | Usually tied to a specific model provider and deployment environment.                          | Supports interchangeable model providers through a modular LangChain-based architecture.                                       |
-| Tool Integration | Tool execution is managed internally by the platform.                                          | Tool definitions, workflows, and middleware layers are directly configurable within the codebase.                              |
-| Agent Control    | Internal reasoning and orchestration mechanisms are generally abstracted away from developers. | Agent workflows are implemented using LangGraph, allowing experimentation with prompts, tools, middleware, and execution flow. |
-| Deployment       | Fully managed cloud services.                                                                  | Self-hosted Docker-based deployment suitable for local development and experimentation.                                        |
-
----
-
-## Application Demo
-
-[![Demo Video](https://img.shields.io/badge/Watch_Demo_Video-Click_Here-blue?style=for-the-badge&logo=youtube)](https://github.com/user-attachments/assets/cb7cbb49-3660-4212-8465-575974ce86c8)
+[Watch the demonstration video here](https://github.com/user-attachments/assets/f5fb53d5-b44e-4a4f-8154-eae625603a93)
 
 ---
 
 ## Core Features
 
-*   **Asynchronous LangChain Agentic Reasoning**: A backend loop built on LangChain and LangGraph. It runs asynchronously to break down complex user queries, maintain execution flow, and dynamically orchestrate tool usage without blocking the server.
-*   **Integrated Agent Tools**: A suite of modular tools the AI can actively select and trigger during inference, including Google Search (Google Search), Document Retrieval (retrieve_context), Web Scraping (fetch_web_page), and Gmail access (read_emails).
-*   **Cognitive Middleware Pipeline**: Integrates native middlewares via `langchain.agents.middleware` to secure, stabilize, and audit agent interactions. This includes automatic model failure recovery (`ModelFallbackMiddleware`), input sanitization and credential scrubbing (`PIIMiddleware`).
-*   **Deep-Think Reasoner**: A post-inference self-critique layer built by subclassing `AgentMiddleware` as the `ReEvaluateAnswerMiddleware` class with explicit configuration signatures. When enabled, it intercepts the initial generated draft to self-critique logic, verify code syntax, and refine the answer before final client delivery.
-*   **Multi-Tenant RAG Pipeline (Chroma DB)**: A secure vector database system backed by Chroma DB that isolates indexes by user ID. It supports document extraction, chunking, and similarity search for standard formats (`.pdf`, `.docx`, `.md`, `.txt`) and raw source code files (`.py`, `.js`, `.ts`, `.c`, `.cpp`, `.html`, `.css`).
-*   **Isolated Ingestion & Multi-File Uploads**: A drag-and-drop file upload interface supporting multi-file uploads. Users can choose to store their files either on their own Google Drive (via OAuth2 synchronization) or locally on the server machine, utilizing synchronous buffer caching to prevent handle invalidation during transfers.
-*   **Specialized Agent Personalities**: Selectable system-level prompts (e.g., Coder, Researcher, Assistant, or a collaborative Human partner) that alter the agent's baseline behavior and response formatting on the fly.
-*   **Persistent Conversation Memory**: Thread-safe message tracking backed by PostgreSQL and async SQLAlchemy connection pooling, ensuring contextual memory is maintained seamlessly across multiple chat turns.
-*   **Multi-Provider Authentication**: Supports standard local credentials via stateless JWTs (fastapi-users) alongside Google OAuth2 integration, allowing the system to securely interact with the user's Google Workspace.
-*   **Client-Side Rendering Engine**: Real-time UI rendering of complex LaTeX math formulas via KaTeX (with inline currency guards) and programming code blocks using Highlight.js, complete with copy-to-clipboard functionality.
-*   **Lightweight SPA Architecture**: A classless, responsive single-page application built on vanilla ES6 modules. It features a modern fluid glassmorphism UI, absolute-positioned mobile layouts, and CSS micro-animations.
-*   **Soft-Delete Architecture**: Database lifecycle management using logical cascade soft-deletes (deleted_at timestamps) at the SQLAlchemy layer to preserve data integrity and prevent accidental permanent loss of user history.
+* **Scaling Test-Time Compute**: Offers configurable reasoning modes (`Low`, `Medium`, `High`, `Extra`) that implement test-time compute allocation strategies using self-consistency and multi-sample verification.
+* **On-Demand Model Management**: An integrated model browser allows users to search Hugging Face for GGUF models, view available quantizations, and download files directly to the local models registry.
+* **Dynamic Model Routing**: Utilizes `llama-swap` to automatically load, unload, and hot-swap local GGUF models in VRAM/RAM based on the selected chat configuration.
+* **Private Retrieval-Augmented Generation (RAG)**: Supports local document ingestion (e.g., PDF, Python, Markdown) via direct drag-and-drop into the chat window. Document text is chunked and stored in a local Chroma vector database to provide grounded contextual citations.
+* **KaTeX LaTeX & Markdown Rendering**: Renders standard Markdown structures, syntax-highlighted code blocks, and mathematical notation using KaTeX auto-render (supporting both inline `$` and block `$$` equations).
+* **Configurable System Persona & Settings**: Switch between pre-configured personalities (General, Coder, Researcher, Gen-Z) and tune generative settings like inference temperature directly from the input composer.
 
 ---
 
 ## Technology Stack
 
-LocalMind is built using a clean, modern, and highly modular technology stack designed for optimal concurrency and extensibility:
-
-### Frontend
-- **HTML5 (Semantic UI)**: Semantic elements for structural layout, accessibility, and high-fidelity indexing.
-- **CSS3 (Vanilla CSS)**: Curated Liquid Glass parameters, fluid grid layouts, and active micro-animations.
-- **ES6 JavaScript Modules**: Organized as a classless client architecture separating routing ([api.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/api.js)), RAG documents ([attachments.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/attachments.js)), chat states ([chat.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/chat.js)), auth lifecycles ([auth.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/auth.js)), thread logic ([conversations.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/conversations.js)), and DOM/popovers ([ui.js](file:///d:/Work/Code/GithubProjects/LocalMind/src/frontend/js/ui.js)).
-
-### Backend
-- **Python**: Core programming language.
-- **FastAPI**: Asynchronous high-performance web framework.
-- **FastAPI-Users**: User management system enforcing JSON Web Tokens (JWT) authentication strategy.
-- **Google OAuth2**: Multi-provider authentication and file workspace offline scope synchronization.
-- **SQLAlchemy (Async)**: Concurrency-driven database connection pool engine utilizing `asyncpg`.
-- **Alembic**: Database schema migrations control.
-- **LangChain / LangGraph**: Advanced AI cognitive workflows, tool mappings, and pregel middleware chains.
-- **Chroma DB**: Isolated localized document vector store indexes.
-
-### Database
-- **PostgreSQL**: Production-grade transactional repository for users, logical session threads, chat attachments, and secure OAuth tokens.
-
-### Deployment & DevOps
-- **Docker**: Containerization engine isolating the Python/FastAPI backend runtime and static asset serving environments.
-- **Docker Compose**: Multi-container orchestration networking the isolated Database, Backend, and Frontend service dependencies into a unified, single-command deployment stack.
-
----
-
-## Development Journey
-
-LocalMind has evolved through key development stages to reach its final production-ready state:
-
-*   **LocalMind v1.0 (The Foundation)**: Minimal single-page chat interface supporting basic conversational exchanges and active session in-memory context retention.
-*   **LocalMind v2.0 (Identity & RAG Framework)**: Decoupled client-server architecture introducing JWT Local Auth, Google OAuth2 handshakes, document upload drawers, isolated Chroma vector search, and footnote citations.
-*   **LocalMind v2.2 (Soft-Delete Migration)**: Auditable data persistence using logical `deleted_at` cascades across SQLAlchemy database models.
-*   **LocalMind v3.0 (Rich Formatting)**: Rich educational rendering including KaTeX LaTeX mathematical notations, Highlight.js code editors, and Copy-to-Clipboard glass overlays.
-*   **LocalMind v3.1 & v3.1.1 (Tables & Tools Showcase)**: Added pipe-delimited grid-table support with scroll controls, and an Agent Tools drawer displaying modular workflows.
-*   **LocalMind v3.2 & v3.2.1 (Refinement & Standardizations)**: Transitioned UI to a lightweight glass design with dynamic wallpapers.
-*   **LocalMind v3.3 & v3.3.1 (Code RAG & Usage Limits)**: Integrated raw code file parsing into the RAG pipeline, established database usage limits, and abstracted turn update helpers.
-*   **LocalMind v3.4 (Lazy Thread Generation)**: Introduced lazy conversation generation where thread database allocation occurs only upon the first user prompt or upload.
-*   **LocalMind v3.5 (Human Personality)**: Integrated the standalone local `Human` conversational personality option.
-*   **LocalMind v3.6 (Multi-File Ingest & Watcher Fixes)**: Resolved drag-and-drop file handle invalidation with synchronous buffer caching, moved local uploads to a hidden `.uploads/` directory to prevent live-reload refreshes, and integrated `.docx` parsing requirements.
-*   **LocalMind v3.7 (Deep-Think Config & Execution Fixes) [LATEST]**: Fixed Deep-Think middleware configuration propagation by subclassing `AgentMiddleware` with type-annotated parameters, and implemented type-safe message getters to prevent `AttributeError` during intermediate tool execution.
-
----
-
-## Repository Structure
-
-Below is the complete, high-fidelity directory tree of the finalized LocalMind repository:
-
-```text
-LocalMind/
-├── .env                              # Local environmental variables & API secrets (ignored)
-├── .gitignore                        # Extensive git ignore configuration
-├── .uploads/                         # Hidden directory storing local document attachments and Chroma vector DB indices
-├── docker-compose.yaml               # Docker deployment multi-container orchestration
-├── LICENSE                           # MIT License
-├── main.py                           # Entry point to launch the FastAPI server
-├── migrations/                       # Alembic database migration scripts
-│   ├── env.py                        # Migration environment script
-│   ├── script.py.mako                # Migration template file
-│   └── versions/                     # Generated database schema migration history files
-├── pytest.ini                        # Pytest runner configurations
-├── README.md                         # Project documentation (LocalMind Final Release)
-├── requirements.txt                  # Python environment packages
-├── src/
-│   ├── backend/                      # FastAPI Asynchronous Web Engine
-│   │   ├── __init__.py
-│   │   ├── app.py                    # Server instantiation, global middleware hooks, and app lifespan
-│   │   ├── backend.Dockerfile        # Container blueprint for backend
-│   │   ├── agents/                   # Domain: Core AI Brain Mechanics
-│   │   │   ├── __init__.py
-│   │   │   ├── agent_personality/    # Text files defining custom system-level prompts for each agent personality
-│   │   │   │   ├── assistant.txt
-│   │   │   │   ├── coder.txt
-│   │   │   │   ├── general.txt
-│   │   │   │   ├── genz.txt
-│   │   │   │   ├── human.txt
-│   │   │   │   ├── researcher.txt
-│   │   │   │   └── unhinged.txt
-│   │   │   ├── config.py             # LLM configurations, embeddings, and Chroma RAG ingestion
-│   │   │   ├── core.py               # Functional LangChain agent compiler & temporal prompts
-│   │   │   ├── middlewares.py        # Mid-inference layers (PII, fallback models, deep-thinking)
-│   │   │   └── tools.py              # Custom Agent tools (retrieve_context, google_search, fetch_web_page, read_emails)
-│   │   ├── auth/                     # Domain: Identity & Google API Permissions
-│   │   │   ├── __init__.py
-│   │   │   └── core.py               # GoogleOAuth2, JWT authentication strategy, token refresh flow
-│   │   ├── database/                 # Domain: Data Persistence Layer
-│   │   │   ├── __init__.py
-│   │   │   ├── crud.py               # Data Access Object pattern for chats, attachments, messages (Soft-Delete)
-│   │   │   ├── exceptions.py         # Domain error definitions
-│   │   │   ├── models.py             # SQLAlchemy declarative model schemas (Soft-Delete timestamps)
-│   │   │   ├── schemas.py            # Pydantic validation specs
-│   │   │   └── session.py            # Async DB connection setup & Dependency Injection providers
-│   │   └── routes/                   # REST API Router Endpoints
-│   │       ├── chat.py               # Asynchronous agent invocation, history building, & source citations
-│   │       ├── conversations.py      # Chat thread session CRUD management
-│   │       └── uploads.py            # Safe file upload, physical storage writing, & Chroma embedding
-│   └── frontend/                     # Single Page Application (SPA) Client-Side Layer
-│       ├── index.html                # Main HTML5 semantic structure (Liquid Glass UI)
-│       ├── frontend.Dockerfile       # Container blueprint for frontend static assets serving
-│       ├── css/                      # Vanilla CSS styling modules
-│       │   ├── chat.css              # Conversation bubbles, input bar, & scrolling paddings
-│       │   ├── glass.css             # Backdrop-filter styling, glow-orbs, custom dropdowns, & tool popups
-│       │   ├── main.css              # Root typography, auth overlays, drawers, & layout grids
-│       │   ├── responsive.css        # Viewport adjustment rules for mobile & tablet layouts
-│       │   └── sidebar.css           # Navigation lists, thread cards, active indicators, and logo
-│       ├── images/                   # High-contrast dynamic wallpaper assets
-│       │   ├── Aerial photography of concrete roads-original.jpg
-│       │   ├── Blue and brown steel bridge-original.jpg
-│       │   ├── Church Dome Cathedral-original.jpg
-│       │   ├── Duck Bird Grass-original.jpg
-│       │   └── Rock formation on body of water-large.jpg
-│       └── js/                       # Modular ES6 Javascript architecture
-│           ├── api.js                # REST Client fetching /chat, /conversation, /uploads, /auth
-│           ├── app.js                # Client-side core coordinator, wallpaper & dropdown engines
-│           ├── attachments.js        # Drag-and-drop uploader & storage provider toggle triggers
-│           ├── auth.js               # OAuth redirect controllers & current user sync actions
-│           ├── chat.js               # Message timelines, custom typing loaders, & citation lists
-│           ├── conversations.js      # Thread CRUD management & list re-rendering
-│           └── ui.js                 # Toast notifications, popovers, and drawer animations
-├── tests/                            # Automated Pytest Suite
-│   ├── conftest.py                   # Global DB/OAuth isolation mock setups & fixtures
-│   ├── test_agents.py                # Testing agent compiles, tools routing & deep-thinking mid-inference
-│   ├── test_database_crud.py         # Database transaction coverage (conversations, attachments, user schemas)
-│   ├── test_routes_auth.py           # Auth endpoint registry and jwt verification testing
-│   ├── test_routes_chat.py           # End-to-end chat endpoint invocation tests
-│   ├── test_routes_conversations.py  # Chat list and thread query authorization testing
-│   └── test_routes_uploads.py        # Secure multi-provider file upload validation tests
-```
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | Vanilla HTML5 / CSS3 / ES6 JavaScript (single-page app) |
+| **Backend** | Python, FastAPI, async SQLAlchemy (`asyncpg`) |
+| **AI Engine** | LangChain, LangGraph, ChatOpenAI (local endpoint) |
+| **Vector Store** | ChromaDB, HuggingFace `sentence-transformers/all-MiniLM-L6-v2` |
+| **Model Serving** | llama-swap, llama.cpp (GGUF format) |
+| **Database** | PostgreSQL 15 |
+| **Deployment** | Docker |
 
 ---
 
 ## Getting Started
 
-### 1. Environment Variables (`.env`)
-Create a `.env` file in the project root containing your required credentials. This configuration is needed for both deployment methods:
+### Prerequisites
 
-#### Required Keys (Core System)
-```ini
-# Google Gemini API key and model bindings
-GOOGLE_API_KEY = "your-gemini-api-key"
-GOOGLE_GENERATIVE_AI_MODEL_NAME = "google_genai:gemini-3.5-flash"
-GOOGLE_EMBEDDING_MODEL_NAME = "text-embedding-004"
+* Python 3.10+ (if running bare-metal)
+* Docker & Docker Compose (recommended for containerized execution)
+* NVIDIA GPU with CUDA support (highly recommended for local model inference speed)
 
-# Core application encryption key for JWT credentials session validation
-JWT_SECRET_KEY = "your-secure-jwt-secret-string"
+### Installation & Launch
 
-# PostgreSQL database connection URL
-# Choose the correct connection URL depending on your setup:
-# For Docker Compose (Method 1):
-POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@db:5432/localmind_db"
+#### Option A: Running with Docker (Recommended)
 
-# For Manual Local Setup (Method 2):
-# POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/localmind_db"
-```
+LocalMind includes pre-configured container definitions and quick-launch wrapper scripts.
 
-#### Optional Keys (Integrations & Diagnostics)
-```ini
-# Google OAuth 2.0 Credentials (Optional: required only for Google Identity flow)
-GOOGLE_CLIENT_ID = "your-google-client-id"
-GOOGLE_CLIENT_SECRET = "your-google-client-secret"
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/abcdef54/LocalMind.git
+   cd LocalMind
+   ```
 
-# Tavily Search Engine API (Optional: enables modular web search tools)
-TAVILY_KEY = "your-tavily-key"
+2. Start the application stack using the quick-launch script:
+   
+   * **On Windows (PowerShell/CMD)**:
+     ```powershell
+     .\start.bat -c 32 -p 18000
+     ```
+   
+   * **On Linux / macOS (Terminal)**:
+     ```bash
+     chmod +x start.sh
+     ./start.sh -c 32 -p 18000
+     ```
 
-# AI Inference Fallbacks (Optional: comma-separated list of secondary models)
-GOOGLE_GENEATIVE_AI_FALLBACK_MODELS = "google_genai:gemini-3.1-pro,google_genai:gemini-3.1-flash"
+   *Optional Flags*:
+   * `-c` or `--context-length`: Sets the default context length in thousands of tokens (e.g., `16`, `32`).
+   * `-p` or `--port`: Sets the host port that `llama-swap` runs on (default: `18000`).
 
-# LangSmith / LangChain Tracing (Optional: only needed for logging and diagnostic analytics)
-LANGCHAIN_API_KEY = "your-langchain-api-key"
-LANGCHAIN_ENDPOINT = "https://api.smith.langchain.com"
-```
+3. Once all containers show as running and healthy, open **`http://localhost:5500`** in a browser to access the frontend user interface.
 
 ---
 
-### 2. Method 1: Running with Docker Compose (Recommended)
-This runs the entire stack (PostgreSQL Database, FastAPI Backend, and Nginx Frontend) in containerized environments with a single command:
+#### Option B: Bare-Metal Installation (Manual Development Setup)
 
-1. **Ensure Docker is running** on your system.
-2. **Create the `.env` file** in the project root as detailed in Step 1 (making sure `POSTGRESQL_URL` uses the `db` host).
-3. **Start all services**:
+To run the backend and frontend services directly on your host machine without Docker:
+
+1. Clone the repository and navigate to the project directory:
    ```bash
-   docker-compose up --build -d
-   ```
-4. **Access the application**:
-   - **Frontend UI Client**: `http://localhost:5500` (served via Nginx container)
-   - **FastAPI API Server**: `http://localhost:8000` (served via Uvicorn backend container)
-   - **PostgreSQL Database**: Port `5433` maps to database container port `5432` locally (so you can inspect it with PgAdmin or DBeaver using username `postgres` and password `admin`).
-
-To stop and remove all container resources, networks, and configurations:
-```bash
-docker-compose down
-```
-
----
-
-### 3. Method 2: Manual Local Development Setup
-If you prefer running the servers natively on your host machine for development:
-
-#### A. Database Configuration
-Before booting up the backend, ensure you have a running PostgreSQL instance:
-1. Create a database named `localmind_db`.
-2. Configure your connection string in `.env` (using the `localhost` database connection string):
-   ```ini
-   POSTGRESQL_URL = "postgresql+asyncpg://postgres:admin@localhost:5432/localmind_db"
+   git clone https://github.com/abcdef54/LocalMind.git
+   cd LocalMind
    ```
 
-#### B. Backend Setup
-1. Standard Python environments (Python 3.10+ recommended) should be launched:
+2. Set up a Python virtual environment and install the required dependencies:
    ```bash
-   # Create a virtual environment
    python -m venv .venv
-   
-   # Activate on Windows:
+   # Windows:
    .venv\Scripts\activate
-   
-   # Install dependencies
+   # Linux/macOS:
+   source .venv/bin/activate
+
    pip install -r requirements.txt
    ```
-2. Run database migrations:
-   ```bash
-   alembic upgrade head
-   ```
-3. Launch the server using the entrypoint:
-   ```bash
-   python main.py
-   ```
-   *The backend server runs on `http://127.0.0.1:8000` with hot-reloading active.*
 
-#### C. Running the Tests
-To verify all routers, agent chains, tool integrations, and ORM pipelines, execute:
-```bash
-pytest -v
-```
+3. Start `llama-swap` inside a Docker container (handles GGUF model execution):
+   ```powershell
+   # Windows PowerShell example:
+   docker run -it --rm `
+     --gpus all `
+     -p 18000:18000 `
+     -v <path-to-project>\src\backend\ai\llms\cpp_models:/models `
+     -v <path-to-project>\llama_swap_config.yaml:/app/config.yaml `
+     ghcr.io/mostlygeek/llama-swap:cuda `
+     --config /app/config.yaml --watch-config --listen 0.0.0.0:18000
+   ```
 
-#### D. Frontend Launch
-LocalMind is built entirely on client-side modules:
-*   Serve the `src/frontend/` folder using any lightweight web server. For example:
-    ```bash
-    python -m http.server 5500
-    ```
-*   Access `http://127.0.0.1:5500/src/frontend/index.html` in your web browser.
+4. Start the FastAPI backend server:
+   ```bash
+   python main.py -c 32 -p 18000
+   ```
+
+5. Serve or open the static frontend:
+   Open `src/frontend/index.html` in your web browser, or serve the directory using a static web server on port `5500`.
 
 ---
 
-## API Reference
+## Development Journey
 
-| Domain | Endpoint | Method | Description |
-| :--- | :--- | :--- | :--- |
-| **Auth** | `/auth/register` | `POST` | Register a new user with standard credentials. |
-| **Auth** | `/auth/jwt/login` | `POST` | Authenticate credentials and receive a secure JWT token. |
-| **Auth** | `/auth/google/authorize` | `GET` | Initiates the Google OAuth authorization redirect. |
-| **Auth** | `/auth/google/callback` | `GET` | Exchanges code for persistent user profile and workspace tokens. |
-| **User** | `/users/me` | `GET` | Fetches active user session profile details. |
-| **Chat** | `/chat` | `POST` | Dispatch prompt message, invokes LangChain agent, saves records, returns reply. |
-| **Chat** | `/chat/regenerate` | `POST` | Re-evaluates assistant reply, utilizing deep thinking critique. |
-| **Threads** | `/conversation` | `POST` | Initialize a new conversational session and thread. |
-| **Threads** | `/conversation` | `GET` | Fetches all active conversation threads sorted descending (excludes soft-deletes). |
-| **Threads** | `/conversation/{id}/messages` | `GET` | Retrieves full message transcript timeline for a thread (excludes soft-deletes). |
-| **Uploads** | `/uploads/conversation/{id}` | `POST` | Upload and securely ingest a text, docx, or pdf document. |
-| **Uploads** | `/uploads/conversation/{id}` | `GET` | Lists all active document attachments linked to a thread. |
-| **Uploads** | `/uploads/{attachment_id}` | `DELETE` | Removes file record, cleans local/Google Drive files, and purges Chroma vector indices. |
+LocalMind has evolved through several major architectural generations.
+
+#### LocalMind v1.0 — The Prototype
+
+The first prototype focused on building a simple conversational interface with basic in-memory conversation history and a minimal frontend.
+
+#### LocalMind v2.0 — Accounts & Retrieval
+
+Introduced a client-server architecture featuring JWT authentication, Google OAuth, document uploads, Chroma-based Retrieval-Augmented Generation (RAG), and citation support.
+
+#### LocalMind v3.x — User Experience
+
+Focused on improving usability and presentation through rich Markdown rendering, LaTeX support, syntax highlighting, tables, improved file handling, conversation management, and iterative UI refinements.
+
+#### LocalMind v4.0 — Research & Experimentation
+
+This phase explored test-time reasoning techniques.
+
+The original Deep Think implementation introduced self-reflection and multi-pass inference, serving as the first experimental reasoning pipeline and laying the groundwork for more advanced orchestration.
+
+#### LocalMind v5.0 — Fully Local AI Platform (Current)
+
+A complete architectural redesign replacing cloud-hosted inference with a fully local AI stack.
+
+Major architectural changes include:
+
+* Complete removal of authentication and cloud dependencies
+* LangGraph orchestration engine
+* Multi-model support through llama-swap
+* Integrated Hugging Face model browser and downloader
+* Dynamic GGUF model management
+* Configurable reasoning modes (Low, Medium, High, Extra)
+* Automatic conversation summarization and memory management
+* Local RAG with Chroma vector search
+* Configurable local inference parameters
+* Designed as a platform for experimenting with test-time compute scaling and reasoning algorithms.
+
+---
+
+## Repository Structure
+
+```text
+LocalMind/
+├── .env                                  # Environment variables (auto-created on first run)
+├── .gitignore
+├── docker-compose.yaml                   # Multi-container orchestration
+├── LICENSE                               # MIT License
+├── llama_swap_config.yaml                # Auto-generated llama-swap model routing config
+├── main.py                               # Entry point — starts the FastAPI server
+├── requirements.txt                      # Python dependencies
+│
+├── src/
+│   ├── backend/                          # FastAPI async backend
+│   │   ├── __init__.py
+│   │   ├── app.py                        # Application factory, lifespan, middleware, router mounts
+│   │   ├── backend.Dockerfile
+│   │   ├── constants.py                  # Project-wide constants and paths
+│   │   │
+│   │   ├── ai/                           # AI orchestration layer
+│   │   │   ├── __init__.py
+│   │   │   │
+│   │   │   ├── langchain/                # LangChain tools and vector store
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── tools.py              # Agent tools
+│   │   │   │   └── vector_db.py          # Chroma vector DB wrapper
+│   │   │   │
+│   │   │   ├── langgraph/                # LangGraph agent pipeline
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── graph_builder.py      # Graph compilation, LocalMindAI class
+│   │   │   │   ├── graph_configs.py      # Reasoning mode width configurations
+│   │   │   │   ├── graph_nodes.py        # Node implementations
+│   │   │   │   ├── graph_states.py       # AgentState and Candidate dataclasses
+│   │   │   │   └── graph_utils.py        # LLM factory, seeding, token logging
+│   │   │   │
+│   │   │   ├── llms/                     # Local model management
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── huggingface.py        # HF API browsing, quant listing, GGUF downloading
+│   │   │   │   ├── model_manager.py      # Local file scanning, llama-swap config generation
+│   │   │   │   └── cpp_models/           # Downloaded GGUF model files
+│   │   │   │
+│   │   │   └── system_prompt/            # Personality prompt templates
+│   │   │       ├── __init__.py
+│   │   │       ├── instruction.py        # Prompt builder with personality injection
+│   │   │       └── system_instructions.json  # Personality definitions
+│   │   │
+│   │   ├── database/                     # Data access layer
+│   │   │   ├── __init__.py
+│   │   │   ├── crud.py                   # Async CRUD operations for all entities
+│   │   │   ├── exceptions.py             # Custom domain exceptions
+│   │   │   ├── models.py                 # SQLAlchemy ORM models
+│   │   │   ├── schemas.py                # Pydantic request/response schemas
+│   │   │   └── session.py                # Async session factory and DB init
+│   │   │
+│   │   ├── routes/                       # API route handlers
+│   │   │   ├── __init__.py
+│   │   │   ├── chat.py                   # POST /chat — agent inference endpoint
+│   │   │   ├── conversations.py          # CRUD routes for conversations and messages
+│   │   │   ├── dependencies.py           # FastAPI dependency injection
+│   │   │   ├── models.py                 # Model browsing, downloading, and management routes
+│   │   │   └── uploads.py                # File upload, ingestion, and attachment routes
+│   │   │
+│   │   └── services/                     # Business logic layer
+│   │       ├── attachment_services.py    # File upload orchestration and vector DB ingestion
+│   │       ├── conversation_services.py  # Chat history, summarization, and message management
+│   │       └── model_services.py         # Model install, sync, deletion, and llama-swap config
+│   │
+│   └── frontend/                         # Vanilla SPA frontend
+│       ├── index.html                    # Entry point HTML
+│       ├── app.js                        # Application logic, state management, rendering
+│       ├── app.css                       # Liquid glass UI styles
+│       └── frontend.Dockerfile
+```
+
+---
+
+## References
+
+1. Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters
+2. Universal Self-Consistency for Large Language Model Generation
+3. Scalable Best-of-N Selection for Large Language Models via Self-Certainty
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

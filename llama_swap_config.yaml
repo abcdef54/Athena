@@ -1,0 +1,4 @@
+models:
+  qwen2.5-3b-instruct-q4_k_m:
+    cmd: "llama-server --port ${PORT} -m /models/qwen2.5-3b-instruct-q4_k_m.gguf -ngl 99 -c 32768 --parallel 1 --flash-attn auto"
+    proxy: http://127.0.0.1:${PORT}

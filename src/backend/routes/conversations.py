@@ -1,11 +1,8 @@
 from fastapi import HTTPException, Depends, APIRouter
-from sqlalchemy.ext.asyncio import AsyncSession
-from src.backend.database.session import get_async_session
-from src.backend.database.models import User
 from src.backend.database.schemas import ConversationCreate, ConversationResponse, ChatResponse, AttachmentReponse
 from src.backend.database.exceptions import ConversationNotFound
-from src.backend.database import crud
-from src.backend.auth import current_active_user
+from src.backend.services.conversation_services import ConversationService
+from src.backend.routes.dependencies import get_conversation_service
 
 
 router = APIRouter(prefix='/conversation', tags=['conversations'])
@@ -14,14 +11,11 @@ router = APIRouter(prefix='/conversation', tags=['conversations'])
 @router.post("", response_model=ConversationResponse)
 async def create_conversation(
     conversation_create: ConversationCreate,
-    user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session)
+    conversation_service: ConversationService = Depends(get_conversation_service)
 ) -> ConversationResponse:
     try:
-        conversation = await crud.create_conversation(
-            title=conversation_create.title,
-            user=user,
-            session=session
+        conversation = await conversation_service.create_conversation(
+            title=conversation_create.title
         )
         return ConversationResponse.model_validate(conversation)
     except HTTPException:
@@ -32,11 +26,10 @@ async def create_conversation(
 
 @router.get("", response_model=list[ConversationResponse])
 async def get_conversations(
-    user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session)
+    conversation_service: ConversationService = Depends(get_conversation_service)
 ) -> list[ConversationResponse]:
     try:
-        conversations = await crud.get_conversations(user, session)
+        conversations = await conversation_service.get_conversations()
         return conversations
     except HTTPException:
         raise
@@ -47,11 +40,10 @@ async def get_conversations(
 @router.get("/{id}", response_model=ConversationResponse)
 async def get_conversation(
     id: str,
-    user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session)
+    conversation_service: ConversationService = Depends(get_conversation_service)
 ) -> ConversationResponse:
     try:
-        conversation = await crud.get_conversation(id, user, session)
+        conversation = await conversation_service.get_conversation(id)
         return ConversationResponse.model_validate(conversation)
     except HTTPException:
         raise
@@ -62,18 +54,15 @@ async def get_conversation(
 @router.get("/{conversation_id}/messages", response_model=list[ChatResponse])
 async def get_conversation_messages(
     conversation_id: str,
-    user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session)
+    conversation_service: ConversationService = Depends(get_conversation_service)
 ) -> list[ChatResponse]:
     try:
-        conversation = await crud.get_conversation(conversation_id, user, session)
-        if conversation.user_id != user.id:
-            raise HTTPException(status_code=403, detail="Permission denied to view session log data.")
+        conversation = await conversation_service.get_conversation(conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail=f"Conversation {conversation_id} not found.")
 
-        messages = await crud.get_conversation_messages(
-            conversation_id=conversation_id,
-            user=user,
-            session=session
+        messages = await conversation_service.get_conversation_messages(
+            conversation_id=conversation_id
         )
         return [ChatResponse.model_validate(m) for m in messages]
     except ConversationNotFound as e:
@@ -86,15 +75,12 @@ async def get_conversation_messages(
 async def get_message_sources(
     conversation_id: str,
     message_id: str,
-    user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session)
+    conversation_service: ConversationService = Depends(get_conversation_service)
 ) -> list[AttachmentReponse]:
     try:
-        citations = await crud.get_infomation_source(
+        citations = await conversation_service.get_information_source(
             message_id=message_id,
-            conversation_id=conversation_id,
-            user=user,
-            session=session
+            conversation_id=conversation_id
         )
 
         return citations
@@ -118,15 +104,12 @@ async def get_message_sources(
 async def rename_conversation(
     conversation_id: str,
     new_name: str,
-    user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session)
+    conversation_service: ConversationService = Depends(get_conversation_service)
 ) -> ConversationResponse:
     try:
-        updated_conversation = await crud.rename_conversation(
+        updated_conversation = await conversation_service.rename_conversation(
             conversation_id=conversation_id,
-            new_name=new_name,
-            user=user,
-            session=session
+            new_name=new_name
         )
         return ConversationResponse.model_validate(updated_conversation)
     except HTTPException:
@@ -138,14 +121,11 @@ async def rename_conversation(
 @router.delete("/{conversation_id}", response_model=ConversationResponse)
 async def delete_conversation(
     conversation_id: str,
-    user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session)
+    conversation_service: ConversationService = Depends(get_conversation_service)
 ) -> ConversationResponse:
     try:
-        deleted = await crud.delete_conversation(
-            conversation_id=conversation_id,
-            user=user,
-            session=session
+        deleted = await conversation_service.delete_conversation(
+            conversation_id=conversation_id
         )
         return ConversationResponse.model_validate(deleted)
     except HTTPException:

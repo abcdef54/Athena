@@ -1,9 +1,6 @@
-from src.backend.database.models import StorageProvider
-import uuid
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
-from fastapi_users import schemas
 from pydantic import ConfigDict
 
 
@@ -13,7 +10,10 @@ class ChatRequest(BaseModel):
     conversation_id: UUID
     content: str
     personality: str = "general"
-    deep_think: bool
+    model_name: str
+    reasoning_mode: str = "low"
+    temperature: float = 0.0
+    tools_enabled: bool = True
 
 
 class ChatResponse(BaseModel):
@@ -23,14 +23,15 @@ class ChatResponse(BaseModel):
     role: str
     personality: Optional[str] = None
     created_at: datetime
+    citations: list["AttachmentReponse"]
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
 
 
 class ConversationCreate(BaseModel):
-    user_id: str
+    user_id: Optional[str] = None
     title: str
 
 
@@ -47,7 +48,6 @@ class AttachmentCreate(BaseModel):
     file_name: str
     file_type: str
     file_size: int
-    storage_provider: StorageProvider
     created_at: datetime
 
 
@@ -56,19 +56,53 @@ class AttachmentReponse(BaseModel):
     file_name: str
     file_type: str
     file_size: int
-    storage_provider: StorageProvider
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserRead(schemas.BaseUser[uuid.UUID]):
-    created_at: datetime
+class FileInfo(BaseModel):
+    file_id: UUID
+    file_path: str
+    file_size: int
+    file_type: str
+    file_name: str
+
+
+class InstalledModelResponse(BaseModel):
+    id: UUID
+    display_name: str
+    model_name: str
+    hf_repo: str
+    gguf_file: str
+    local_path: str
+    quantization: str
+    size_bytes: int
+    installed_at: datetime
+    is_default: bool
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserCreate(schemas.BaseUserCreate):
-    pass
+class HFModelBrowseResponse(BaseModel):
+    id: str
+    author: str
+    name: str
+    family: str
+    size: Optional[str] = None
+    task: str
+    downloads: int
+    downloads_text: str
+    likes: int
+    license: Optional[str] = None
+    created_at: Optional[str] = None
 
 
-class UserUpdate(schemas.BaseUserUpdate):
-    pass
+class HFQuantResponse(BaseModel):
+    filename: str
+    quant: str
+    size_bytes: int
+    size_gb: float
+
+
+class DownloadModelRequest(BaseModel):
+    repo_id: str
+    gguf_filename: str

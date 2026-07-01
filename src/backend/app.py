@@ -1,24 +1,100 @@
 import os
-import dotenv
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 
-from src.backend.database.schemas import UserUpdate, UserCreate, UserRead
-from src.backend.database.session import create_db_and_table
-from src.backend.auth import auth_backend, fastapi_user_client, google_oauth_client
-
-from src.backend.routes import chat_router, conversation_router, uploads_router
-
-dotenv.load_dotenv()
+from src.backend.constants import DEFAULT_MODEL_REPO_ID, DEFAULT_MODEL_GGUF_FILE
+from src.backend.database.session import create_db_and_table, async_session_maker
+from src.backend.routes import chat_router, conversation_router, uploads_router, models_router
+from src.backend.routes.dependencies import get_model_manager, get_vector_db, get_ai
+from src.backend.services.model_services import ModelService
+from src.backend.ai.llms.huggingface import path as cpp_models_dir
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Server Starting")
+    print()
+    print("="*60)
+    print()
+    print("[INFO] Initializing LocalMind backend.")
+    print()
+    print("="*60)
+    print()
+
+    print("[INFO] Initializing Database...")
     await create_db_and_table()
+    print("[INFO] Database initialized.")
+    print()
+
+    # Ensure model directory exists
+    print("[INFO] Ensuring model directory exists...")
+    os.makedirs(cpp_models_dir, exist_ok=True)
+    print("[INFO] Model directory exists.")
+    print()
+
+    # Detect first run by scanning for GGUF models
+    local_ggufs = [f for f in os.listdir(cpp_models_dir) if f.endswith(".gguf")]
+
+    try:
+        async with async_session_maker() as session:
+            manager = get_model_manager()
+            model_service = ModelService(manager=manager, session=session)
+
+            if not local_ggufs:
+                print("[INFO] No GGUF models were found.")
+                print()
+                print("[INFO] Downloading default model...")
+                print()
+                print("[INFO] Repository:")
+                print(DEFAULT_MODEL_REPO_ID)
+                print()
+                print("[INFO] Model:")
+                print(DEFAULT_MODEL_GGUF_FILE)
+                print()
+                print("[INFO] This only happens once.")
+                print()
+                # Block until download completes
+                await manager.download_gguf(DEFAULT_MODEL_REPO_ID, DEFAULT_MODEL_GGUF_FILE)
+                print("[INFO] Default model downloaded successfully.")
+
+                # Synchronize model in database and regenerate llama-swap configuration
+                await model_service.sync_local_models()
+                print("[INFO] Model synchronized.")
+                print("[INFO] Llama-swap configuration updated.")
+                print()
+                print("[INFO] Starting LocalMind...")
+            else:
+                await model_service.sync_local_models()
+                print("[INFO] Successfully synced local models.")
+                print()
+    except Exception as e:
+        print(f"[ERROR] Failed to sync local models at startup: {e}")
+
+    # Eagerly initialize heavy singletons so they are ready before the first request
+    print("[INFO] Initializing Vector DB")
+    get_vector_db()
+    print("[INFO] Vector DB initialized.")
+    print()
+
+    print("[INFO] Initializing AI engine")
+    get_ai()
+    print("[INFO] AI engine initialized.")
+    print()
+
+    print()
+    print("="*60)
+    print("[INFO] LocalMind backend is ready.")
+    print("="*60)
+    print()
+    print("[INFO] To stop the backend, press Ctrl+C.")
+    print("="*60)
+    print()
+
     yield
-    print("Shutting down Athena backend...")
+    print("[INFO] Shutting down LocalMind backend...")
+    print()
+    print("="*60)
+    print()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -33,23 +109,4 @@ app.add_middleware(
 app.include_router(chat_router)
 app.include_router(conversation_router)
 app.include_router(uploads_router)
-
-app.include_router(fastapi_user_client.get_auth_router(auth_backend), prefix='/auth/jwt', tags=['auth'])
-app.include_router(fastapi_user_client.get_register_router(UserRead, UserCreate), prefix='/auth', tags=['auth'])
-app.include_router(fastapi_user_client.get_reset_password_router(), prefix='/auth', tags=['auth'])
-app.include_router(fastapi_user_client.get_verify_router(UserRead), prefix='/auth', tags=['auth'])
-app.include_router(fastapi_user_client.get_users_router(UserRead, UserUpdate), prefix='/users', tags=['users'])
-app.include_router(
-    fastapi_user_client.get_oauth_router(
-        oauth_client=google_oauth_client,
-        backend=auth_backend,
-        state_secret=os.getenv("JWT_SECRET_KEY"),
-        redirect_url="http://127.0.0.1:5500/src/frontend/index.html",
-        associate_by_email=True,
-        csrf_token_cookie_secure=False,
-        csrf_token_cookie_httponly=False,
-        csrf_token_cookie_samesite="lax",
-    ),
-    prefix='/auth/google',
-    tags=['auth']
-)
+app.include_router(models_router)

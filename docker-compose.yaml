@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -14,6 +12,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  llama-swap:
+    image: ghcr.io/mostlygeek/llama-swap:cuda
+    container_name: localmind_llamaswap
+    restart: unless-stopped
+    ports:
+      - "${LLAMA_SWAP_PORT:-18000}:18000"
+    volumes:
+      - ./src/backend/ai/llms/cpp_models:/models
+      - ./llama_swap_config.yaml:/app/config.yaml
+    command: --config /app/config.yaml --watch-config --listen 0.0.0.0:18000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+
   backend:
     build:
       context: .
@@ -25,10 +41,17 @@ services:
     environment:
       POSTGRESQL_URL: postgresql+asyncpg://postgres:admin@db:5432/localmind_db
       PYTHONPATH: /app
+      LOCAL_LLM_URL: http://llama-swap:18000/v1
+      DEFAULT_CONTEXT_LENGTH_K: ${DEFAULT_CONTEXT_LENGTH_K:-32}
     ports:
       - "8000:8000"
+    volumes:
+      - ./src/backend/ai/llms/cpp_models:/app/src/backend/ai/llms/cpp_models
+      - ./.uploads:/app/.uploads
+      - ./llama_swap_config.yaml:/app/llama_swap_config.yaml
     depends_on:
       - db
+      - llama-swap
 
   frontend:
     build:

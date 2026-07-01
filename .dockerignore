@@ -7,6 +7,8 @@ __pycache__/
 *.pyc
 *.pyo
 
+*.ini
+
 .env
 
 .git
@@ -14,7 +16,11 @@ __pycache__/
 
 .uploads/
 tests/
+migrations/
+models/
+src/backend/ai/llms/cpp_models/
+.migrations/
+.test_temp_db.sqlite
 
 LICENSE
-README.md
-update_log.md
+*.md

@@ -75,43 +75,50 @@ async def override_get_async_session() -> AsyncSession:
         yield session
 
 
-# ----------------- 2. MONKEYPATCH ENGINE & AGENTS CONFIG BEFORE ANY BACKEND IMPORTS -----------------
+# ----------------- 2. MONKEYPATCH ENGINE & AI INTEGRATION BEFORE ANY BACKEND IMPORTS -----------------
 import src.backend.database.session as db_session
 db_session.async_session_maker = test_session_maker
 db_session.engine = test_engine
 db_session.get_async_session = override_get_async_session
 
-import src.backend.agents.config as agents_config
-agents_config.document_embedding_model = mock_embeddings
-agents_config.query_embedding_model = mock_embeddings
-agents_config.llm = mock_llm
-agents_config._get_user_vector_store = mock_get_user_vector_store
+# Mock LocalMindAI
+from src.backend.ai.langgraph.graph_builder import LocalMindAI
+LocalMindAI.chat = AsyncMock(return_value={
+    'final_answer': 'Mocked Agent Response',
+    'citations': []
+})
+LocalMindAI.baseline_chat = AsyncMock(return_value='Mocked Agent Response')
 
+# Mock LocalMindVectorDB
+import src.backend.ai.langchain.vector_db as vector_db_mod
 
-# ----------------- 3. MONKEYPATCH CORE MODULES -----------------
-import src.backend.agents.core as agents_core
-agents_core.create_agent = MagicMock(return_value=mock_agent)
-agents_core.make_agent = MagicMock(return_value=mock_agent)
+class MockLocalMindVectorDB:
+    def __init__(self, *args, **kwargs):
+        self._vector_store = mock_vector_store
+        self._embeddings = mock_embeddings
 
-import src.backend.agents as agents_pkg
-agents_pkg.make_agent = MagicMock(return_value=mock_agent)
+    async def ingest(self, file_path, attachment_id, chunk_size=500, chunk_overlap=50):
+        mock_vector_store.add_documents([MagicMock()])
 
-import src.backend.agents.tools as tools_mod
-tools_mod.query_embedding_model = mock_embeddings
-tools_mod._get_user_vector_store = mock_get_user_vector_store
+    async def query(self, text, n_results=4, file_id_filter=None):
+        return []
+
+    async def delete_file(self, attachment_id):
+        pass
+
+vector_db_mod.LocalMindVectorDB = MockLocalMindVectorDB
 
 
 # ----------------- 4. MONKEYPATCH GOOGLE APIS & IMPORTS -----------------
-import src.backend.auth.core as auth_core
 from google.oauth2.credentials import Credentials
 
 async def mock_get_google_credentials(user_id, session):
     return MagicMock(spec=Credentials)
 
-auth_core.get_google_credentials = mock_get_google_credentials
 
 # Also mock googleapiclient.discovery.build on crud & tools modules
 import src.backend.database.crud as crud_mod
+import src.backend.ai.langchain.tools as tools_mod
 
 mock_build_service = MagicMock()
 mock_drive_files = MagicMock()
@@ -145,11 +152,8 @@ tools_mod.build = mock_build
 # ----------------- 5. LOAD FASTAPI APP & DEFINE FIXTURES -----------------
 from src.backend.app import app
 from src.backend.database.session import get_async_session
-from src.backend.database.models import Base, User, UserOAuthToken
+from src.backend.database.models import Base
 
-# Override make_agent in routes.chat
-import src.backend.routes.chat as chat_route
-chat_route.agent = mock_agent
 
 @pytest.fixture(scope="function", autouse=True)
 async def setup_database():
@@ -184,56 +188,3 @@ async def client() -> AsyncClient:
     
     app.dependency_overrides.clear()
 
-@pytest.fixture
-async def test_user(db_session: AsyncSession) -> User:
-    """Creates and returns a verified test user with Google OAuth credentials seeded."""
-    from sqlalchemy import select
-    stmt = select(User).where(User.email == "test@example.com")
-    result = await db_session.execute(stmt)
-    existing_user = result.scalar_one_or_none()
-    if existing_user:
-        return existing_user
-
-    import uuid
-    from fastapi_users.password import PasswordHelper
-    
-    password_helper = PasswordHelper()
-    hashed_password = password_helper.hash("test-password-123")
-    
-    user = User(
-        id=uuid.uuid4(),
-        email="test@example.com",
-        hashed_password=hashed_password,
-        is_active=True,
-        is_verified=True,
-        is_superuser=False
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-
-    token = UserOAuthToken(
-        id=uuid.uuid4(),
-        user_id=user.id,
-        oauth_name="google",
-        account_id="google-id-123",
-        account_email="test@example.com",
-        access_token="mock-access-token",
-        refresh_token="mock-refresh-token",
-        expires_at=9999999999,
-        scopes="openid,email,profile,https://www.googleapis.com/auth/drive.file,https://www.googleapis.com/auth/gmail.readonly"
-    )
-    db_session.add(token)
-    await db_session.commit()
-    
-    return user
-
-@pytest.fixture
-async def auth_client(client: AsyncClient, test_user: User) -> AsyncClient:
-    """Provides an authenticated AsyncClient with JWT Bearer header set."""
-    from src.backend.auth.core import get_jwt_strategy
-    jwt_strategy = get_jwt_strategy()
-    token = await jwt_strategy.write_token(test_user)
-    
-    client.headers["Authorization"] = f"Bearer {token}"
-    return client

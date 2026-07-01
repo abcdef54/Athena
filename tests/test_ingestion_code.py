@@ -1,7 +1,15 @@
 import os
 import pytest
-from src.backend.agents.config import _extract_and_split_docs, ingest_docs
-from tests.conftest import mock_vector_store
+import importlib
+from unittest.mock import MagicMock
+
+import src.backend.ai.langchain.vector_db as vector_db_module
+importlib.reload(vector_db_module)
+RealLocalMindVectorDB = vector_db_module.LocalMindVectorDB
+
+class DummyLocalMindVectorDB(RealLocalMindVectorDB):
+    def __init__(self, vector_store=None):
+        self._vector_store = vector_store or MagicMock()
 
 pytestmark = pytest.mark.asyncio
 
@@ -17,8 +25,9 @@ def test_function():
     file_path = tmp_path / "test_script.py"
     file_path.write_text(code_content, encoding="utf-8")
     
+    db = DummyLocalMindVectorDB()
     # Call parser
-    chunks = _extract_and_split_docs(str(file_path), "py", chunk_size=50, chunk_overlap=10)
+    chunks = db._extract_and_split_docs(str(file_path), "py", chunk_size=50, chunk_overlap=10)
     
     assert len(chunks) > 0
     # Check that chunks contain our content
@@ -35,11 +44,12 @@ async def test_extract_and_split_docs_all_languages(tmp_path):
         "txt": ("test.txt", "This is just simple plain text contents for testing.")
     }
     
+    db = DummyLocalMindVectorDB()
     for lang, (filename, content) in languages.items():
         file_path = tmp_path / filename
         file_path.write_text(content, encoding="utf-8")
         
-        chunks = _extract_and_split_docs(str(file_path), lang, chunk_size=50, chunk_overlap=10)
+        chunks = db._extract_and_split_docs(str(file_path), lang, chunk_size=50, chunk_overlap=10)
         assert len(chunks) > 0
         combined_content = "".join([c.page_content for c in chunks])
         assert len(combined_content) > 0
@@ -49,21 +59,21 @@ async def test_ingest_docs_with_mock_vector_store(tmp_path):
     file_path = tmp_path / "test_ingest.py"
     file_path.write_text(code_content, encoding="utf-8")
     
-    # Reset mock call history
-    mock_vector_store.add_documents.reset_mock()
+    mock_vs = MagicMock()
+    mock_vs.add_documents = MagicMock()
+    db = DummyLocalMindVectorDB(vector_store=mock_vs)
     
     # Call ingest docs
-    await ingest_docs(
+    await db.ingest(
         file_path=str(file_path),
         attachment_id="mock-attachment-id",
         chunk_size=100,
-        chunk_overlap=10,
-        user_id="test-user-id"
+        chunk_overlap=10
     )
     
     # Assert mock was called
-    mock_vector_store.add_documents.assert_called_once()
-    called_args = mock_vector_store.add_documents.call_args[0]
+    mock_vs.add_documents.assert_called_once()
+    called_args = mock_vs.add_documents.call_args[0]
     chunks = called_args[0]
     
     # Verify chunks and metadata
@@ -78,8 +88,8 @@ async def test_extract_and_split_docs_docx(tmp_path):
     doc = docx.Document()
     doc.add_paragraph("This is a sample docx text content for ingestion testing.")
     doc.save(str(docx_path))
-    
-    chunks = _extract_and_split_docs(str(docx_path), "docx", chunk_size=100, chunk_overlap=10)
+    db = DummyLocalMindVectorDB()
+    chunks = db._extract_and_split_docs(str(docx_path), "docx", chunk_size=100, chunk_overlap=10)
     assert len(chunks) > 0
     combined_content = "".join([c.page_content for c in chunks])
     assert "docx text content" in combined_content

@@ -12,9 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src/backend /app/src/backend
 COPY ./main.py /app/main.py
-COPY ./alembic.ini /app/alembic.ini
-COPY ./migrations /app/migrations
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "alembic upgrade head && python main.py"]
+CMD ["sh", "-c", "python main.py"]

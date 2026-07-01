@@ -125,3 +125,11 @@ $RECYCLE.BIN/
 
 # --- Log Files ---
 *.log
+
+tests/
+
+*.gguf
+
+update_log.md
+
+.migrations/

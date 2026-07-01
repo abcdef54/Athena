@@ -1,22 +1,11 @@
 from datetime import datetime
-import os
-import shutil
 import uuid
-import asyncio
-import tempfile
-
-from typing import Optional, List, Dict
-from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from uuid import UUID
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
 
-from src.backend.database.models import Conversation, Message, Attachment, StorageProvider, User
-from src.backend.database.exceptions import ConversationNotFound, MessageNotFound, UserNotFound
-from src.backend.auth import get_google_credentials
-from src.backend.agents.config import _get_user_vector_store, ingest_docs
+from src.backend.database.models import Conversation, Message, Attachment, InstalledModel
+from src.backend.database.exceptions import ConversationNotFound
 
 
 def coerce_uuid(val):
@@ -25,39 +14,13 @@ def coerce_uuid(val):
     return val
 
 
-async def update_preview_turn_used(
-    user_id: UUID,
-    session: AsyncSession
-) -> User:
-    try:
-        stmt = update(User).where(
-            User.id == user_id,
-            User.deleted_at == None
-        ).values(
-            preview_turn_useds = User.preview_turn_useds + 1
-        )
-        await session.execute(stmt)
-        await session.commit()
-        res = await session.execute(select(User).where(User.id == user_id))
-        user = res.scalar_one_or_none()
-        if not user:
-            raise UserNotFound(f"User {user_id} not found")
-        return user
-    except Exception:
-        await session.rollback()
-        raise
-
-
-
 async def create_conversation(
     title: str,
-    user: User,
     session: AsyncSession
 ) -> Conversation:
     try:
         new_conversation = Conversation(
             title=title,
-            user_id=user.id
         )
 
         session.add(new_conversation)
@@ -70,44 +33,35 @@ async def create_conversation(
         await session.rollback()
         raise
 
-
 async def create_message(
     content: str,
     conversation_id: UUID,
     role: str,
     session: AsyncSession,
-    user: Optional[User] = None,
-    personality: Optional[str] = None,
-    citations: Optional[List[Attachment]] = None
+    model_name: str,
+    temperature: float,
+    reasoning_mode: str,
+    personality: str,
+    citations: list[Attachment] = []
 ) -> Message:
     conversation_id = coerce_uuid(conversation_id)
-    if user is not None:
-        conversation = await session.execute(
-            select(Conversation).where(
-                Conversation.id == conversation_id,
-                Conversation.deleted_at == None
-            )
+    conversation = await session.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.deleted_at == None
         )
-        conversation = conversation.scalar_one_or_none()
-        if not conversation:
-            raise ConversationNotFound(f"Conversation {conversation_id} not found")
-        if conversation.user_id != user.id:
-            raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}")
-    else:
-        conversation = await session.execute(
-            select(Conversation).where(
-                Conversation.id == conversation_id,
-                Conversation.deleted_at == None
-            )
-        )
-        conversation = conversation.scalar_one_or_none()
-        if not conversation:
-            raise ConversationNotFound(f"Conversation {conversation_id} not found")
+    )
+    conversation = conversation.scalar_one_or_none()
+    if not conversation:
+        raise ConversationNotFound(f"Conversation {conversation_id} not found")
 
     new_message = Message(
         conversation_id=conversation_id,
         content=content,
         role=role,
+        model_name=model_name,
+        temperature=temperature,
+        reasoning_mode=reasoning_mode,
         personality=personality,
         citations=citations or []
     )
@@ -123,58 +77,56 @@ async def create_message(
         raise
 
 
-async def update_message(
-    message_id: UUID,
-    conversation_id: UUID,
-    new_message_content: str,
-    user: User,
-    session: AsyncSession
-) -> Message:
-    message_id = coerce_uuid(message_id)
-    conversation_id = coerce_uuid(conversation_id)
-    conversation = await session.execute(
-        select(Conversation).where(
-            Conversation.id == conversation_id,
-            Conversation.deleted_at == None
-        )
-    )
-    conversation = conversation.scalar_one_or_none()
-    if not conversation:
-        raise ConversationNotFound(f"Conversation {conversation_id} not found.")
+# async def update_message(
+#     message_id: UUID,
+#     conversation_id: UUID,
+#     new_message_content: str,
+#     user: User,
+#     session: AsyncSession
+# ) -> Message:
+#     message_id = coerce_uuid(message_id)
+#     conversation_id = coerce_uuid(conversation_id)
+#     conversation = await session.execute(
+#         select(Conversation).where(
+#             Conversation.id == conversation_id,
+#             Conversation.deleted_at == None
+#         )
+#     )
+#     conversation = conversation.scalar_one_or_none()
+#     if not conversation:
+#         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
 
-    if conversation.user_id != user.id:
-        raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
+#     if conversation.user_id != user.id:
+#         raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
 
-    message = await session.execute(
-        select(Message).where(
-            Message.id == message_id,
-            Message.conversation_id == conversation_id,
-            Message.deleted_at == None
-        )
-    )
-    message = message.scalar_one_or_none()
-    if not message:
-        raise MessageNotFound(f"Message {message_id} not found.")
+#     message = await session.execute(
+#         select(Message).where(
+#             Message.id == message_id,
+#             Message.conversation_id == conversation_id,
+#             Message.deleted_at == None
+#         )
+#     )
+#     message = message.scalar_one_or_none()
+#     if not message:
+#         raise MessageNotFound(f"Message {message_id} not found.")
 
-    if message.conversation_id != conversation_id:
-        raise MessageNotFound(f"Message {message_id} does not belong in conversation {conversation_id}.")
+#     if message.conversation_id != conversation_id:
+#         raise MessageNotFound(f"Message {message_id} does not belong in conversation {conversation_id}.")
         
-    try:
-        message.content = new_message_content
-        await session.commit()
-        await session.refresh(message)
-        return message
-    except Exception:
-        await session.rollback()
-        raise
+#     try:
+#         message.content = new_message_content
+#         await session.commit()
+#         await session.refresh(message)
+#         return message
+#     except Exception:
+#         await session.rollback()
+#         raise
 
 
 async def get_conversations(
-    user: User,
     session: AsyncSession
 ) -> list[Conversation]:
     stmt = select(Conversation).where(
-        Conversation.user_id == user.id,
         Conversation.deleted_at == None
     ).order_by(
         Conversation.created_at.desc()
@@ -185,7 +137,6 @@ async def get_conversations(
 
 async def get_conversation(
     id: UUID,
-    user: User,
     session: AsyncSession
 ) -> Conversation:
     id = coerce_uuid(id)
@@ -198,17 +149,16 @@ async def get_conversation(
     conversation = conversation.scalar_one_or_none()
     if not conversation:
         raise ConversationNotFound(f"Conversation {id} not found.")
-    if user.id != conversation.user_id:
-        raise PermissionError(f"User {user.id} is not the owner of conversation {id}")
     return conversation
 
 
 async def get_conversation_messages(
     conversation_id: UUID,
-    user: User,
-    session: AsyncSession
+    session: AsyncSession,
+    limit: int = None
 ) -> list[Message]:
     conversation_id = coerce_uuid(conversation_id)
+
     conversation = await session.execute(select(Conversation).where(
         Conversation.id == conversation_id,
         Conversation.deleted_at == None
@@ -218,21 +168,25 @@ async def get_conversation_messages(
     if conversation is None:
         raise ConversationNotFound(f"Conversation {conversation_id} not found")
     
-    if user.id != conversation.user_id:
-        raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}")
-    
-    results = await session.scalars(
-        select(Message).where(
-            Message.conversation_id == conversation_id,
-            Message.deleted_at == None
+    if limit is None:
+        results = await session.scalars(
+            select(Message).where(
+                Message.conversation_id == conversation_id,
+                Message.deleted_at == None
+            )
         )
-    )
+    else:
+        results = await session.scalars(
+            select(Message).where(
+                Message.conversation_id == conversation_id,
+                Message.deleted_at == None
+            ).limit(limit)
+        )
     return results.all()
 
 
 async def delete_conversation(
     conversation_id: UUID,
-    user: User,
     session: AsyncSession
 ) -> dict:
     conversation_id = coerce_uuid(conversation_id)
@@ -246,29 +200,6 @@ async def delete_conversation(
     if not existing_conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
     
-    if user.id != existing_conversation.user_id:
-        raise PermissionError(f'User {user.id} is not the owner of conversation {conversation_id}.')
-    
-    stmt = select(Attachment).where(
-        Attachment.conversation_id == conversation_id,
-        Attachment.deleted_at == None
-    )
-    result = await session.execute(stmt)
-    attachments_to_wipe = result.scalars().all()
-
-    if attachments_to_wipe:
-        cleanup_tasks = [
-            remove_attachment(
-                conversation_id=conversation_id,
-                file_id=amt.id,
-                storage_provider=amt.storage_provider,
-                user=user,
-                session=session
-            )
-            for amt in attachments_to_wipe
-        ]
-        await asyncio.gather(*cleanup_tasks)
-
     conversation_data_copy = {
         "id": existing_conversation.id,
         "title": existing_conversation.title,
@@ -311,7 +242,6 @@ async def conversation_exist(
 async def rename_conversation(
     conversation_id: UUID,
     new_name: str,
-    user: User,
     session: AsyncSession
 ) -> Conversation:
     conversation_id = coerce_uuid(conversation_id)
@@ -325,9 +255,6 @@ async def rename_conversation(
     if not conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
 
-    if conversation.user_id != user.id:
-        raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}")
-    
     try:
         conversation.title = new_name
         await session.commit()
@@ -340,18 +267,16 @@ async def rename_conversation(
 
 
 
-async def create_attachment(
+async def create_attachment_record(
     conversation_id: UUID,
-    file: UploadFile,
-    storage_provider: StorageProvider,
-    user: User,
+    file_id: UUID,
+    file_name: str,
+    file_path: str,
+    file_type: str,
+    file_size: int,
     session: AsyncSession
 ) -> Attachment:
     conversation_id = coerce_uuid(conversation_id)
-    print(f"\n[DEBUG create_attachment] Creating attachment...")
-    print(f"  - conversation_id: {conversation_id}")
-    print(f"  - filename: {file.filename}")
-    print(f"  - storage_provider: {storage_provider}")
 
     conversation = await session.execute(
         select(Conversation).where(
@@ -364,96 +289,14 @@ async def create_attachment(
         print(f"[DEBUG create_attachment] ERROR: Conversation {conversation_id} not found.")
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
 
-    if conversation.user_id != user.id:
-        print(f"[DEBUG create_attachment] ERROR: User {user.id} is not the owner of conversation {conversation_id}.")
-        raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
-
-    uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../.uploads/'))
-    os.makedirs(uploads_dir, exist_ok=True)
-    print(f"[DEBUG create_attachment] Uploads target folder: {uploads_dir}")
-
-    file_id = uuid.uuid4()
-    _, file_ext = os.path.splitext(file.filename)
-    clean_ext = file_ext.lower().replace(".", "")
-    loop = asyncio.get_running_loop()
-
-    file.file.seek(0, os.SEEK_END)
-    file_size = file.file.tell()
-    file.file.seek(0)
-    print(f"[DEBUG create_attachment] File size determined: {file_size} bytes")
-
-    fd, temp_local_path = tempfile.mkstemp(suffix=f".{clean_ext}")
-    print(f"[DEBUG create_attachment] Created temporary local file: {temp_local_path}")
-    try:
-        with os.fdopen(fd, 'wb') as temp_buffer:
-            shutil.copyfileobj(file.file, temp_buffer)
-        print("[DEBUG create_attachment] Temporary buffer copy completed.")
-        
-        try:
-            print("[DEBUG create_attachment] Executing ingest_docs...")
-            await ingest_docs(
-                file_path=temp_local_path,
-                attachment_id=str(file_id),
-                chunk_size=1000,
-                chunk_overlap=200,
-                user_id=str(user.id)
-            )
-            print("[DEBUG create_attachment] ingest_docs executed successfully.")
-        except Exception as ingest_err:
-            # Gracefully log ingestion error without aborting the actual storage upload
-            import logging
-            logging.warning(f"Resilient Ingestion: text chunking skipped/failed for {file.filename}: {str(ingest_err)}")
-            print(f"[DEBUG create_attachment] WARNING: Ingestion skipped/failed: {str(ingest_err)}")
-    finally:
-        if os.path.exists(temp_local_path):
-            os.remove(temp_local_path)
-            print("[DEBUG create_attachment] Cleaned up temporary local file.")
-    
-    file.file.seek(0)
-
-    if storage_provider == StorageProvider.GOOGLE_DRIVE:
-        print("[DEBUG create_attachment] Uploading to Google Drive...")
-        google_creds = await get_google_credentials(user.id, session)
-        def upload_to_drive_sync():
-            service = build('drive', 'v3', credentials=google_creds)
-            
-            file_metadata = {"name": f"{file_id}{file_ext}"}
-            media = MediaIoBaseUpload(file.file, mimetype=file.content_type, resumable=True)
-
-            drive_file = service.files().create(
-                body=file_metadata,
-                media_body=media,
-                fields='id'
-            ).execute()
-
-            return drive_file.get('id')
-        
-        final_storage_identifier = await loop.run_in_executor(None, upload_to_drive_sync)
-        print(f"[DEBUG create_attachment] Google Drive Upload Success. ID: {final_storage_identifier}")
-
-    elif storage_provider == StorageProvider.LOCAL:
-        saved_filename = f'{file_id}{file_ext}'
-        full_path = os.path.join(uploads_dir, saved_filename)
-        print(f"[DEBUG create_attachment] Uploading locally to: {full_path}...")
-
-        def save_file_sync():
-            with open(full_path, 'wb') as buffer:
-                shutil.copyfileobj(file.file, buffer)
-            
-            return full_path
-
-        final_storage_identifier = await loop.run_in_executor(None, save_file_sync)
-        print(f"[DEBUG create_attachment] Local Upload Success. Path: {final_storage_identifier}")
-
     new_attachment = Attachment(
         id=file_id,
         conversation_id=conversation_id,
-        file_name=file.filename or 'unnammed_file',
-        file_path=final_storage_identifier,
-        file_type=file.content_type or f"application/{clean_ext}",
+        file_name=file_name,
+        file_path=file_path,
+        file_type=file_type,
         file_size=file_size,
         extracted_text=None,
-        storage_provider=storage_provider
     )
 
     try:
@@ -468,13 +311,12 @@ async def create_attachment(
         raise
 
 
-async def remove_attachment(
+async def remove_attachment_record(
     conversation_id: UUID,
     file_id: UUID,
-    storage_provider: StorageProvider,
-    user: User,
     session: AsyncSession
 ) -> dict:
+    """Remove Attachment recond from database - does not remove the actual file"""
     conversation_id = coerce_uuid(conversation_id)
     file_id = coerce_uuid(file_id)
     conversation = await session.execute(
@@ -486,9 +328,6 @@ async def remove_attachment(
     conversation = conversation.scalar_one_or_none()
     if not conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
-
-    if conversation.user_id != user.id:
-        raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
 
     attachment = await session.execute(
         select(Attachment).where(
@@ -506,53 +345,25 @@ async def remove_attachment(
         "file_name": attachment.file_name,
         "file_type": attachment.file_type,
         "file_size": attachment.file_size,
+        "file_path": attachment.file_path,
         "created_at": attachment.created_at
     }
 
-    loop = asyncio.get_running_loop()
-
-    def uningest_vectors_sync():
-        user_vector_store = _get_user_vector_store(user.id)
-        user_vector_store.delete(where={'source_file_id': str(file_id)})
-    
-    await loop.run_in_executor(None, uningest_vectors_sync)
-
-
-    if storage_provider == StorageProvider.GOOGLE_DRIVE:
-        google_creds = await get_google_credentials(user.id, session)
-        def delete_file_from_google_drive_sync():
-            service = build('drive', 'v3', credentials=google_creds)
-            service.files().delete(fileId=attachment.file_path).execute()
-        
-        await loop.run_in_executor(None, delete_file_from_google_drive_sync)
-    
-    else:
-        def delete_file_from_disk(path_to_delete: str):
-            if os.path.exists(path_to_delete):
-                os.remove(path_to_delete)
-            else:
-                print(f"Warning: File path {path_to_delete} did not exist on disk.")
-        
-        
-        await loop.run_in_executor(None, delete_file_from_disk, attachment.file_path)
     try:
         await session.delete(attachment)
         await session.commit()
         return attachment_data_copy
-    
     except Exception:
         await session.rollback()
         raise
 
 
 async def get_attachments(
-    user: User,
     session: AsyncSession
-) -> Optional[list[Attachment]]:
+) -> list[Attachment]|None:
     stmt = select(Attachment).join(
         Conversation, Conversation.id == Attachment.conversation_id
     ).where(
-        Conversation.user_id == user.id,
         Conversation.deleted_at == None
     ).order_by(
         Attachment.created_at.desc()
@@ -563,9 +374,8 @@ async def get_attachments(
 
 async def get_conversation_attachments(
     conversation_id: UUID,
-    user: User,
     session: AsyncSession
-) -> Optional[List[Attachment]]:
+) -> list[Attachment]|None:
     conversation_id = coerce_uuid(conversation_id)
     conversation = await session.execute(
         select(Conversation).where(
@@ -577,10 +387,6 @@ async def get_conversation_attachments(
     if not conversation:
         raise ConversationNotFound(f"Conversation {conversation_id} not found.")
     
-    if conversation.user_id != user.id:
-        raise PermissionError(f"User {user.id} is not the owner of conversation {conversation_id}.")
-    
-
     stmt = select(Attachment).where(
         Attachment.conversation_id == conversation_id
     ).order_by(
@@ -593,30 +399,19 @@ async def get_conversation_attachments(
 
 async def get_citations(
     conversation_id: UUID,
-    agent_response: Dict,
+    attachments_ids: list[str],
     session: AsyncSession
-) -> List[Attachment]:
+) -> list[Attachment]:
+    """Get SqlAlchemy Attachment table objects from ids"""
     conversation_id = coerce_uuid(conversation_id)
-    source_filename = set()
-    intermediate_steps = agent_response.get('intermediate_steps')
-    if not intermediate_steps:
+    if not attachments_ids:
         return []
-    
-    for action, observation in intermediate_steps:
-        if action.tool == 'retrieve_context':
-            if isinstance(observation, (list, tuple)) and len(observation) > 1:
-                raw_docs = observation[1]
-                for doc in raw_docs:
-                    local_source_path = doc.metadata.get('source')
-                    if local_source_path:
-                        source_filename.add(os.path.basename(local_source_path))
-    if not source_filename:
-        return []
+
     stmt = select(Attachment).join(
         Conversation, Conversation.id == Attachment.conversation_id
     ).where(
         Attachment.conversation_id == conversation_id,
-        Attachment.file_name.in_(source_filename),
+        Attachment.id.in_(attachments_ids),
         Conversation.deleted_at == None  # <-- Guard against archived context indexing
     )
     result = await session.execute(stmt)
@@ -626,9 +421,8 @@ async def get_citations(
 async def get_infomation_source(
     message_id: UUID,
     conversation_id: UUID,
-    user: User,
     session: AsyncSession
-) -> Optional[List[Attachment]]:
+) -> list[Attachment]|None:
     """
     Returns the collection of file attachments that were cited/used to generate 
     a specific assistant response message.
@@ -638,7 +432,6 @@ async def get_infomation_source(
     conversation = await session.execute(
         select(Conversation).where(
             Conversation.id == conversation_id,
-            Conversation.user_id == user.id,
             Conversation.deleted_at == None
         )
     )
@@ -657,3 +450,90 @@ async def get_infomation_source(
         raise ValueError(f"Message {message_id} not found in conversation {conversation_id}.")
     
     return getattr(message, 'citations', [])
+
+
+async def create_installed_model(
+    display_name: str,
+    model_name: str,
+    hf_repo: str,
+    gguf_file: str,
+    local_path: str,
+    quantization: str,
+    size_bytes: int,
+    is_default: bool,
+    session: AsyncSession
+) -> InstalledModel:
+    new_model = InstalledModel(
+        display_name=display_name,
+        model_name=model_name,
+        hf_repo=hf_repo,
+        gguf_file=gguf_file,
+        local_path=local_path,
+        quantization=quantization,
+        size_bytes=size_bytes,
+        is_default=is_default
+    )
+    try:
+        session.add(new_model)
+        await session.commit()
+        await session.refresh(new_model)
+        return new_model
+    except Exception:
+        await session.rollback()
+        raise
+
+
+async def get_installed_models(
+    session: AsyncSession
+) -> list[InstalledModel]:
+    stmt = select(InstalledModel).order_by(InstalledModel.installed_at.desc())
+    results = await session.execute(stmt)
+    return list(results.scalars().all())
+
+
+async def get_installed_model(
+    id: UUID,
+    session: AsyncSession
+) -> InstalledModel | None:
+    id = coerce_uuid(id)
+    stmt = select(InstalledModel).where(InstalledModel.id == id)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def delete_installed_model(
+    id: UUID,
+    session: AsyncSession
+) -> InstalledModel:
+    id = coerce_uuid(id)
+    model = await get_installed_model(id, session)
+    if not model:
+        raise ValueError(f"Installed model with ID {id} not found.")
+    try:
+        await session.delete(model)
+        await session.commit()
+        return model
+    except Exception:
+        await session.rollback()
+        raise
+
+
+async def update_installed_model(
+    id: UUID,
+    update_data: dict,
+    session: AsyncSession
+) -> InstalledModel:
+    id = coerce_uuid(id)
+    model = await get_installed_model(id, session)
+    if not model:
+        raise ValueError(f"Installed model with ID {id} not found.")
+    try:
+        for key, val in update_data.items():
+            if val is not None:
+                setattr(model, key, val)
+        await session.commit()
+        await session.refresh(model)
+        return model
+    except Exception:
+        await session.rollback()
+        raise
